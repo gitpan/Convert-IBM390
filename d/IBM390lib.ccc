@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 /*-------------------------------------------------------------------
   Module:  Convert::IBM390
   The C functions defined here are faster than straight Perl code.

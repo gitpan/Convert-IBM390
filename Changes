@@ -48,3 +48,8 @@ Revision history for Perl extension Convert::IBM390.
 0.10  Tue Oct 17 10:29:35 2000
 	- Changed 'sv_undef' to 'PL_sv_undef' to conform with current
 	  perl5 lingo.  Otherwise identical to 0.09.
+
+0.11  Fri Dec 15 12:45:21 2000
+	- Added "#include <stdio.h>" to IBM390lib.ccc (don't know how
+	  I missed that one!).
+	- Small cosmetic changes.

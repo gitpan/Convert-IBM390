@@ -49,7 +49,6 @@ chomp ($hexes = <PT>);
 close PT;
 $expected = pack("H*", $hexes);
 $ebrecord = packeb($ptempl, @input);
-$zz=packeb("c5C5", 'ab', 'gh');
 was_it_ok(6, $ebrecord eq $expected);
 
 #----- unpackeb

@@ -6,6 +6,7 @@ MANIFEST
 Makefile.PL
 README
 TRANSITION
+d/IBM390_pm_dummy
 d/IBM390_pm_perlver
 d/IBM390_pm_xsver
 d/IBM390lib.ccc
