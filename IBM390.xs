@@ -52,44 +52,100 @@ not_there:
 MODULE = Convert::IBM390		PACKAGE = Convert::IBM390
 
 
- # Full Collating Sequence Translate -- like tr///, but assumes that
- # the searchstring is a complete 8-bit collating sequence
- # (x'00' - x'FF').
- # The last argument is one of the translation tables defined
- # in IBM390.pm ($a2e_table, etc.).
-SV *
-fcs_xlate(instring, ilength, to_table)
-	char *  instring
-	long    ilength
-	char *  to_table
-	PROTOTYPE: $$$
+void
+asc2eb(instring_sv)
+	SV *  instring_sv
+	PROTOTYPE: $
 	PREINIT:
+	STRLEN  ilength;
+	char *  instring;
 	char *  outstring_wk;
+	 /* To avoid allocating small amounts of storage: */
+	char    shorty[516];
 
-	CODE:
+	PPCODE:
+	instring = SvPV(instring_sv, ilength);
 #ifdef DEBUG390
-	fprintf(stderr, "*D* fcs_xlate: beginning\n");
+	fprintf(stderr, "*D* asc2eb: beginning; length %d\n", ilength);
 #endif
-	New(0, outstring_wk, ilength, char);
-	CF_fcs_xlate(outstring_wk, instring, ilength, to_table);
-	RETVAL = newSVpv(outstring_wk, ilength);
-	Safefree(outstring_wk);
+	if (ilength <= 512) {
+	   CF_fcs_xlate(shorty, instring, ilength, a2e_table);
+	   PUSHs(sv_2mortal(newSVpvn(shorty, ilength)));
+	} else {
+	   New(0, outstring_wk, ilength, char);
+	   CF_fcs_xlate(outstring_wk, instring, ilength, a2e_table);
+	   PUSHs(sv_2mortal(newSVpvn(outstring_wk, ilength)));
+	   Safefree(outstring_wk);
+	}
 #ifdef DEBUG390
-	fprintf(stderr, "*D* fcs_xlate: returning\n");
+	fprintf(stderr, "*D* asc2eb: returning\n");
 #endif
 
-	OUTPUT:
-	RETVAL
+void
+eb2asc(instring_sv)
+	SV *  instring_sv
+	PROTOTYPE: $
+	PREINIT:
+	STRLEN  ilength;
+	char *  instring;
+	char *  outstring_wk;
+	 /* To avoid allocating small amounts of storage: */
+	char    shorty[516];
+
+	PPCODE:
+	instring = SvPV(instring_sv, ilength);
+#ifdef DEBUG390
+	fprintf(stderr, "*D* eb2asc: beginning; length %d\n", ilength);
+#endif
+	if (ilength <= 512) {
+	   CF_fcs_xlate(shorty, instring, ilength, e2a_table);
+	   PUSHs(sv_2mortal(newSVpvn(shorty, ilength)));
+	} else {
+	   New(0, outstring_wk, ilength, char);
+	   CF_fcs_xlate(outstring_wk, instring, ilength, e2a_table);
+	   PUSHs(sv_2mortal(newSVpvn(outstring_wk, ilength)));
+	   Safefree(outstring_wk);
+	}
+#ifdef DEBUG390
+	fprintf(stderr, "*D* eb2asc: returning\n");
+#endif
+
+void
+eb2ascp(instring_sv)
+	SV *  instring_sv
+	PROTOTYPE: $
+	PREINIT:
+	STRLEN  ilength;
+	char *  instring;
+	char *  outstring_wk;
+	 /* To avoid allocating small amounts of storage: */
+	char    shorty[516];
+
+	PPCODE:
+	instring = SvPV(instring_sv, ilength);
+#ifdef DEBUG390
+	fprintf(stderr, "*D* eb2ascp: beginning; length %d\n", ilength);
+#endif
+	if (ilength <= 512) {
+	   CF_fcs_xlate(shorty, instring, ilength, e2ap_table);
+	   PUSHs(sv_2mortal(newSVpvn(shorty, ilength)));
+	} else {
+	   New(0, outstring_wk, ilength, char);
+	   CF_fcs_xlate(outstring_wk, instring, ilength, e2ap_table);
+	   PUSHs(sv_2mortal(newSVpvn(outstring_wk, ilength)));
+	   Safefree(outstring_wk);
+	}
+#ifdef DEBUG390
+	fprintf(stderr, "*D* eb2ascp: returning\n");
+#endif
 
 
  # Much of the following code is shamelessly stolen from Perl's
  # built-in pack and unpack functions (pp.c).
  # packeb -- Pack a list of values into an EBCDIC record
 void
-packeb_XS(pat, a2e_table, ...)
+packeb(pat, ...)
 	char *  pat
-	char *  a2e_table
-	PROTOTYPE: $$
 	PREINIT:
 	char    outstring[OUTSTRING_MEM];
 
@@ -116,15 +172,15 @@ packeb_XS(pat, a2e_table, ...)
 
 	PPCODE:
 #ifdef DEBUG390
-	fprintf(stderr, "*D* packeb_XS: beginning\n");
+	fprintf(stderr, "*D* packeb: beginning\n");
 #endif
-	ii = 2;
+	ii = 1;
 	oi = 0;
 	patend = pat + strlen(pat);
 
 	while (pat < patend) {
 	/* Have we gone past the end of the list of values?  If so, stop. */
-	   if (ii > items)
+	   if (ii >= items)
 	      break;
 	   if (oi >= OUTSTRING_MEM)
 	      croak("Output structure too large in packeb");
@@ -157,7 +213,7 @@ packeb_XS(pat, a2e_table, ...)
 	         datumtype, len);
 	   }
 #ifdef DEBUG390
-	   fprintf(stderr, "*D* packeb_XS: datumtype/len %c%d\n",
+	   fprintf(stderr, "*D* packeb: datumtype/len %c%d\n",
 	     datumtype, len);
 #endif
 
@@ -351,9 +407,9 @@ packeb_XS(pat, a2e_table, ...)
 	   }
 	}
 
-	PUSHs(sv_2mortal(newSVpv(outstring, oi)));
+	PUSHs(sv_2mortal(newSVpvn(outstring, oi)));
 #ifdef DEBUG390
-	fprintf(stderr, "*D* packeb_XS: returning\n");
+	fprintf(stderr, "*D* packeb: returning\n");
 #endif
 
 
@@ -361,20 +417,20 @@ packeb_XS(pat, a2e_table, ...)
  # Note that the EBCDIC data may contain nulls and other unprintable
  # stuff, so we need an SV*, not just a char*.
 void
-unpackeb_XS(pat, eb_xlate_table, ebrecord)
+unpackeb(pat, ebrecord)
 	char *  pat
-	char *  eb_xlate_table
 	SV *    ebrecord
-	PROTOTYPE: $$$
+	PROTOTYPE: $$
 	PREINIT:
 	SV *sv;
 	STRLEN rlen;
 
 	register char *s;
+	char *tail;
 	char *strend;
 	register char *patend;
 	char datumtype;
-	register I32 len, bits;
+	register I32 len, bits, outlen;
 	int i, j, ndec, fieldlen;
 	char hexdigit[16] = "0123456789abcdef";
 
@@ -389,7 +445,7 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 
 	PPCODE:
 #ifdef DEBUG390
-	fprintf(stderr, "*D* unpackeb_XS: beginning\n");
+	fprintf(stderr, "*D* unpackeb: beginning\n");
 #endif
 	s = SvPV(ebrecord, rlen);
 	strend = s + rlen;
@@ -430,7 +486,7 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 	         datumtype, len);
 	   }
 #ifdef DEBUG390
-	   fprintf(stderr, "*D* unpackeb_XS: datumtype/len %c%d\n",
+	   fprintf(stderr, "*D* unpackeb: datumtype/len %c%d\n",
 	     datumtype, len);
 #endif
 	   switch(datumtype) {
@@ -441,11 +497,18 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 	   case 'E':
 	       if (len > strend - s)
 	          len = strend - s;
-	       CF_fcs_xlate(eb_work, s, len, eb_xlate_table);
+	       CF_fcs_xlate(eb_work, s, len, e2a_table);
+	       outlen = len;
 	       if (len < 1)
 	          eb_work[0] = 0x00;  /* Force an empty string. */
+	       if (datumtype == 'E') {  /* Strip nulls and spaces */
+	          tail = eb_work + len - 1;
+	          while (tail >= eb_work && (*tail==' ' || *tail=='\0'))
+	              tail--;
+	          outlen = tail - eb_work + 1;
+	       }
 
-	       XPUSHs(sv_2mortal(newSVpv(eb_work, len)));
+	       XPUSHs(sv_2mortal(newSVpvn(eb_work, outlen)));
 	       s += len;
 	       break;
 
@@ -494,7 +557,7 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 	   case 'c':
 	       if (len > strend - s)
 	          len = strend - s;
-	       XPUSHs(sv_2mortal(newSVpv(s, len)));
+	       XPUSHs(sv_2mortal(newSVpvn(s, len)));
 	       s += len;
 	       break;
 
@@ -545,7 +608,7 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 	           eb_work[i++] = hexdigit[(bits >> 4) & 15];
 	       }
 	       eb_work[i] = '\0';
-	       XPUSHs(sv_2mortal(newSVpv(eb_work, len)));
+	       XPUSHs(sv_2mortal(newSVpvn(eb_work, len)));
 	       break;
 
 	   /* v: varchar EBCDIC character string; i.e., a string of
@@ -561,13 +624,13 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 
 	           if (fieldlen > strend - s)
 	              fieldlen = strend - s;
-	           if (fieldlen < 0) {
-	              sv = UNDEF_PTR;
+	           if (fieldlen > 0) {
+	              CF_fcs_xlate(eb_work, s, fieldlen, e2a_table);
+	              sv = newSVpvn(eb_work, fieldlen);
 	           } else if (fieldlen == 0) {
-	              sv = newSVpv("", 0);
+	              sv = newSVpvn("", 0);
 	           } else {
-	              CF_fcs_xlate(eb_work, s, fieldlen, eb_xlate_table);
-	              sv = newSVpv(eb_work, fieldlen);
+	              sv = UNDEF_PTR;
 	           }
 	           XPUSHs(sv_2mortal(sv));
 	           s += fieldlen;
@@ -631,5 +694,5 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 	   }
 	}
 #ifdef DEBUG390
-	fprintf(stderr, "*D* unpackeb_XS: returning\n");
+	fprintf(stderr, "*D* unpackeb: returning\n");
 #endif

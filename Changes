@@ -81,5 +81,13 @@ Revision history for Perl extension Convert::IBM390.
 	- Math library (-lm) is no longer required.
 
 0.17  Wed Dec 24 09:19:59 2003
-	- Added the SMF timestamp data type at the request of Mark
-	  Siffer (Mark.Siffer@EmersonClimate.com).
+	- Added the SMF timestamp data type at the request of Champ
+	  Lee (champl@charter.net).
+
+0.18  Mon Mar 15 14:02:30 2004
+	- Made performance improvements to the XS/C version: moved the
+	  translation tables into the C code, moved asc2eb etc. to
+	  the .xs file rather than .pm, avoided storage allocations.
+	- Added trailing blank/null suppression to unpackeb('E'...).
+	- Thanks are due to Jeffrey Horner <jeffrey_horner@yahoo.com>
+	  for these suggestions.

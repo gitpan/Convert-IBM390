@@ -11,37 +11,39 @@ print "ok 1\n";
 
 ################## End of black magic.
 
+$VERBOSE = $ENV{TEST_VERBOSE};
+
 my $failed = 0;
 #----- asc2eb
 print "asc2eb...........";
 my ($asc, $eb);
 $asc = '';
 $eb = asc2eb($asc);
-was_it_ok(2, $eb eq '');
+was_it_ok(2, $eb , '');
 print "      ...........";
 $asc = ".<(+|!\$*%\@=[]A2";
 $eb = asc2eb($asc);
-was_it_ok(3, $eb eq "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2");
+was_it_ok(3, $eb, "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2");
 
 #----- eb2asc
 print "eb2asc...........";
 $eb = "";
 $asc = eb2asc($eb);
-was_it_ok(4, $asc eq "");
+was_it_ok(4, $asc, "");
 print "      ...........";
 $eb = "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2";
 $asc = eb2asc($eb);
-was_it_ok(5, $asc eq ".<(+|!\$*%\@=[]A2");
+was_it_ok(5, $asc, ".<(+|!\$*%\@=[]A2");
 
 #----- eb2ascp
 print "eb2ascp..........";
 $eb = "";
 $asc = eb2ascp($eb);
-was_it_ok(6, $asc eq "");
+was_it_ok(6, $asc, "");
 print "       ..........";
 $eb = "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2\x00\xFE";
 $asc = eb2ascp($eb);
-was_it_ok(7, $asc eq ".<(+|!\$*%\@=[]A2  ");
+was_it_ok(7, $asc, ".<(+|!\$*%\@=[]A2  ");
 
 #----- hexdump
 print "hexdump..........";
@@ -49,7 +51,7 @@ my ($string, @hdump);
 $string = "Now is the time for all good Perls to come to the aid of
 their systems";
 @hdump = hexdump($string, 4);
-was_it_ok(8, (@hdump == 3) && $hdump[0] eq 
+was_it_ok(8, $hdump[0],
   "000004: 4E6F7720 69732074 68652074 696D6520  666F7220 616C6C20 676F6F64 20506572  *Now is the time for all good Per*\n");
 
 #----- packeb
@@ -61,7 +63,7 @@ chomp ($hexes = <PT>);
 close PT;
 $expected = pack("H*", $hexes);
 $ebrecord = packeb($ptempl, @input);
-was_it_ok(9, $ebrecord eq $expected);
+was_it_ok(9, $ebrecord, $expected);
 
 #----- unpackeb
 print "unpackeb.........";
@@ -72,13 +74,13 @@ chomp ($expected = <UT>);
 close UT;
 $ebrecord = pack("H*", $hexes);
 @unp = unpackeb($utempl, $ebrecord);
-was_it_ok(10, "<@unp>" eq "<$expected>");
+was_it_ok(10, "@unp", $expected);
 
 #----- unpackeb with undefined results
 print "        .........";
 $ebrecord = pack("H12", "C500FFFEC1C2");
 ($pp, $vv) = unpackeb("p2v", $ebrecord);
-was_it_ok(11, !defined($pp) && !defined($vv));
+was_it_ok_b(11, !defined($pp) && !defined($vv));
 
 if ($failed == 0) { print "All tests successful.\n"; }
 else {
@@ -87,8 +89,19 @@ else {
 }
 
 
+#--- Was it okay?  Arguments: test number, result, expected result.
 sub was_it_ok {
- my ($num, $test) = @_;
- if ($test) { print "ok $num\n"; }
+ my ($num, $res, $exp) = @_;
+
+ if ($res eq $exp) { print "ok $num\n"; }
+ else   { print "not ok $num\n"; $failed++; }
+ print "  expected: <$exp>\n  actual:   <$res>\n" if $VERBOSE;
+}
+
+#--- The same, but just a number and one Boolean argument.
+sub was_it_ok_b {
+ my ($num, $okay) = @_;
+
+ if ($okay) { print "ok $num\n"; }
  else       { print "not ok $num\n"; $failed++; }
 }

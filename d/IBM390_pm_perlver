@@ -11,7 +11,7 @@ require Exporter;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb hexdump
   packed2num num2packed zoned2num num2zoned fcs_xlate);
-$VERSION = '0.17';
+$VERSION = '0.18';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -277,7 +277,9 @@ sub unpackeb {
      # [Ee]:  EBCDIC character string.  $len is a field length.
      if (/[Ee]/) {
         $len = $brem  if $len > $brem;
-        push @rlist, eb2asc(substr($ebrecord, $s, $len));
+        $a = eb2asc(substr($ebrecord, $s, $len));
+        $a =~ s/\s+$//  if $datumtype eq 'E';
+        push @rlist, $a;
         $s += $len;
         last DSWITCH;
      }
@@ -742,7 +744,10 @@ The TEMPLATE is patterned after Perl's unpack template but allows fewer
 options.  The following characters are allowed in the template:
 
   c or C (1)   Character string without translation
-  e or E (1)   EBCDIC string to be translated into ASCII
+  e      (1)   EBCDIC string to be translated into ASCII; preserve
+               trailing nulls and spaces
+  E      (1)   EBCDIC string to be translated into ASCII; strip
+               trailing nulls and spaces
   i      (2)   Signed integer (S/390 fullword)
   I      (2)   Unsigned integer (4 bytes)
   p      (1)   Packed-decimal field

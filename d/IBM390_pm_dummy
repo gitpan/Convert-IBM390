@@ -1,5 +1,5 @@
 package Convert::IBM390;
-$VERSION = '0.17';
+$VERSION = '0.18';
 
 #--- DUMMY ----------------------------------------------------------
 #
@@ -160,7 +160,10 @@ The TEMPLATE is patterned after Perl's unpack template but allows fewer
 options.  The following characters are allowed in the template:
 
   c or C (1)   Character string without translation
-  e or E (1)   EBCDIC string to be translated into ASCII
+  e      (1)   EBCDIC string to be translated into ASCII; preserve
+               trailing nulls and spaces
+  E      (1)   EBCDIC string to be translated into ASCII; strip
+               trailing nulls and spaces
   i      (2)   Signed integer (S/390 fullword)
   I      (2)   Unsigned integer (4 bytes)
   p      (1)   Packed-decimal field

@@ -15,7 +15,7 @@ double pow10[32] = { 1.0, 10.0, 100.0, 1000.0, 10000.0,
 
 /*---------- Test for a valid packed decimal field ----------*/
 int _valid_packed (
-  char * packed_str,
+  const char * packed_str,
   int    plen )
 {
  int   i;
@@ -243,16 +243,21 @@ void  CF_num2zoned
 }
 
 
-/*---------- Full Collating Sequence Translate ----------*/
+/*---------- Full Collating Sequence Translate ----------
+ * This function is like tr/// but assumes that the searchstring
+ * is a complete 8-bit collating sequence (x'00' - x'FF').
+ * The last argument is one of the translation tables defined
+ * in IBM390lib.h (a2e_table, etc.).
+ *-------------------------------------------------------*/
 void  CF_fcs_xlate
   ( char  *outstring,
     char  *instring,
     int    instring_len,
-    char  *to_table )
+    unsigned char  *to_table )
 {
  char  *out_ptr;
  unsigned char offset;
- int    i;
+ register int    i;
 
 #ifdef DEBUG390
   fprintf(stderr, "*D* CF_fcs_xlate: beginning\n");
