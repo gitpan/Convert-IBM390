@@ -1,0 +1,44 @@
+Convert::IBM390 -- functions for manipulating mainframe data
+
+Convert::IBM390 is a Perl module.  It supplies various functions that
+you may find useful when messing with IBM System/3[679]0 data.  See the
+POD documentation in the module, or "man Convert::IBM390" after you have
+installed it.
+
+How to Install
+==============
+
+The usual:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+At the end of "make test", you can expect to see the message "No tests
+defined for Convert::IBM390::IBM390lib extension."  This is normal.
+You may also see a few other error messages.  As far as I can tell,
+these are harmless; they seem to result from my inexperience with
+MakeMaker.  As long as the C code compiles correctly, the module
+should work.
+
+One More Note
+=============
+
+*** IF YOU CAN USE IBM390 RATHER THAN IBM390p, YOU SHOULD. ***
+
+This module is written in a combination of Perl and C.  It should
+compile cleanly in most environments.  If, however, you have trouble
+compiling or installing this module, you can instead use IBM390p,
+which is a Perl-only version of the same functions.  This version is
+to be preferred, however; in my testing, the IBM390 versions of
+pdi, pdo, and fcs_xlate ran 5-6 times as fast as the pure Perl 
+versions.
+
+
+Geoffrey Rommel
+Technical Consultant
+Sears, Roebuck and Co.
+grommel@sears.com
+
+January 1999
