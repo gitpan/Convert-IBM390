@@ -73,3 +73,7 @@ Revision history for Perl extension Convert::IBM390.
 	- Added 'P' option to packeb (suggested by a requirement from
 	  Tony Maa, grab3870@yahoo.com).
 	- Added version function.
+
+0.15X Fri Nov  7 10:38:22 2003
+	- Experimental version to correct bug when building under
+	  Windows.

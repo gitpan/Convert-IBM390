@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "./IBM390lib.h"
+#include "./packeb.h"
 
 static int
 not_here(s)

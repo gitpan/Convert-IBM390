@@ -7,6 +7,7 @@
 #else
    #define UNDEF_PTR &PL_sv_undef
 #endif
+
 /*-------------------------------------------------------------------
   Module:  Convert::IBM390
   Functions:  packeb, unpackeb
@@ -93,7 +94,6 @@ void CF_packeb (
   STRLEN * outlen_ptr )
 {
  SV *   item;
- char * item_data;
  STRLEN item_len;
  int    ii, max_index;  /* ii = item index */
  char   datumtype;
@@ -107,12 +107,8 @@ void CF_packeb (
  static char espace10[] =
   { 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40 };
 
- char achar;
- I16 ashort;
  int aint;
- unsigned int auint;
  I32 along;
- U32 aulong;
  char *aptr;
  double adouble;
  /* The eb_work area is long, but what the heck?  Memory is cheap. */
@@ -392,7 +388,7 @@ int CF_unpackeb (
 
  /* Work fields */
  I32 along;
- long long alonglong;
+ unsigned long aulong;
  /* Some day we may want to support S/390 floats.... */
  /*float afloat;*/
  double adouble;
@@ -583,22 +579,22 @@ int CF_unpackeb (
 
     /* I: unsigned integer (fullword) */
     /* On most systems, integer = long = 32 bits, signed.
-       Therefore, to be safe, we compute this as a long long
+       Therefore, to be safe, we compute this as an unsigned long
        and then cast it to a double. */
     case 'I':
         if (len > (strend - s) / 4)
            len = (strend - s) / 4;
-        if (sizeof(long long) <= 4) {
+        if (sizeof(unsigned long) < 4) {
            warn("Unsigned integer results may be invalid");
         }
         for (i=0; i < len; i++) {
-           alonglong = 0;
+           aulong = 0;
            for (j=0; j < 4; j++) {
-              alonglong <<= 8;
-              alonglong += (unsigned char) *s;  s++;
+              aulong <<= 8;
+              aulong += (unsigned char) *s;  s++;
            }
 
-           sv = newSVnv((double) alonglong);
+           sv = newSVnv((double) aulong);
 	   ret_svs[nelems] = sv;
            nelems++;
         }
