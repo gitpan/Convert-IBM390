@@ -4,15 +4,8 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'	=> 'Convert::IBM390',
     'VERSION_FROM' => 'IBM390.pm', # finds $VERSION
-    'LIBS'	=> ['-lm'],   # e.g., '-lm' 
-    'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
+    'LIBS'	=> ['-lm'],
+    'OBJECT'    => 'IBM390.o IBM390lib.o',
+    'DEFINE'	=> '',    # e.g., '-DHAVE_SOMETHING' 
     'INC'	=> '',    # e.g., -I/cdwh/perl5/lib/5.00502/aix/CORE',
-    'MYEXTLIB'	=> 'IBM390lib/libIBM390lib$(LIB_EXT)',
 );
-
-sub MY::postamble {
-'
-$(MYEXTLIB): IBM390lib/Makefile
-	cd IBM390lib && $(MAKE) $(PASTHRU)
-';
-}

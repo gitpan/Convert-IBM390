@@ -1,10 +1,10 @@
 Changes
 IBM390.pm
 IBM390.xs
-IBM390lib/IBM390lib.c
-IBM390lib/IBM390lib.h
-IBM390lib/Makefile.PL
+IBM390lib.c
+IBM390lib.h
 MANIFEST
 Makefile.PL
 README
 test.pl
+unptests

@@ -2,7 +2,7 @@ package Convert::IBM390;
 
 use strict;
 use Carp;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $AUTOLOAD);
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
 require Exporter;
 require DynaLoader;
@@ -10,8 +10,11 @@ require AutoLoader;
 
 @ISA = qw(Exporter DynaLoader);
 @EXPORT = qw();
-@EXPORT_OK = qw(asc2eb eb2asc eb2ascp hexdump pdi pdo fcs_xlate);
-$VERSION = '0.02';
+@EXPORT_OK = qw(asc2eb eb2asc eb2ascp hexdump pdi pdo
+   unpackeb fcs_xlate);
+$VERSION = '0.03';
+
+%EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
 
 # $warninv = issue warning message if a field is invalid.  Default
@@ -98,6 +101,13 @@ sub hexdump {
  return @outlines;
 }
 
+# Unpack an EBCDIC record
+sub unpackeb {
+ my ($template, $ebrecord) = @_;
+ my $uref = unpackeb_XS($template, $ebrecord, $e2a_table);
+ return (wantarray) ? @$uref : $uref->[0];
+}
+
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -134,7 +144,7 @@ Convert::IBM390 -- functions for manipulating mainframe data
 
 =head1 SYNOPSIS
 
-  use Convert::IBM390 qw(...whatever...);
+  use Convert::IBM390 qw(...those desired... or :all);
 
   $eb  = asc2eb($string);
   $asc = eb2asc($string);
@@ -143,13 +153,15 @@ Convert::IBM390 -- functions for manipulating mainframe data
   $num = pdi($packed [,ndec]);
   $packed = pdo($num [,outbytes [,ndec]]);
 
+  @fields = unpackeb($template, $record);
   @lines = hexdump($string [,startaddr [,charset]]);
 
 =head1 DESCRIPTION
 
 B<Convert::IBM390> supplies various functions that you may find useful
 when messing with IBM System/3[679]0 data.  No functions are exported
-automatically; you must ask for the ones you want.
+automatically; you must ask for the ones you want.  "use ... qw(:all)"
+exports all functions.
 
 By the way, this module is called "IBM390" because it will deal with
 data from any mainframe operating system.  Nothing about it is
@@ -210,12 +222,64 @@ the undefined value.  By default, no warning message will be issued
 in this case, but if you set the variable $Convert::IBM390::warninv
 to 1 (or any other true value), a warning will be issued.
 
+=item B<unpackeb> TEMPLATE RECORD
+
+This function is much like Perl's built-in "unpack".  It takes an
+EBCDIC record (structure) and unpacks it into a list of values.  If
+called in scalar context, it will return only the first unpacked value.
+The TEMPLATE is patterned after Perl's unpack template but allows fewer
+options.  The following characters are allowed in the template:
+
+  c or C (1)   Character string without translation
+  e or E (1)   EBCDIC string to be translated into ASCII
+  i      (2)   Signed integer (S/390 fullword)
+  I      (2)   Unsigned integer (4 bytes)
+  p      (1)   Packed-decimal field
+  s      (2)   Signed short integer (S/390 halfword)
+  S      (2)   Unsigned short integer (2 bytes)	
+  v      (2)   EBCDIC varchar string
+
+ (1) May be followed by a number giving the length of the field.
+ (2) May be followed by a number giving the number of repetitions.
+
+Each character may be followed by a number giving either the length
+of the field or a repeat count, as shown above, or by '*', which means
+to use however many items are left in the string.  The number must
+immediately follow the character, but whitespace may appear between
+field specifiers.
+
+The length for packed (p) fields may include a number of decimal places,
+which is added after the byte count and a '.'.  For instance, "p3.2"
+indicates a 3-byte (5-digit) packed field with 2 implied decimal
+places; if this field contains x'02468C', the result will be 24.68.
+The number of implied decimals may be greater than the number of digits;
+e.g., unpacking the above field with "p3.6" would yield 0.002468.
+
+Varchar (v) fields are assumed to consist of a signed halfword (16-bit)
+integer followed by EBCDIC characters.  This format is used, for
+instance, by DB2/MVS.  A repeat count may be specified; e.g., "v2" does
+not mean a length of 2 bytes, but that there are two such fields in
+succession.  If the number appearing in the initial halfword is N,
+the following N bytes are translated from EBCDIC to ASCII and returned
+as one string.
+
+The EBCDIC-to-ASCII translation used by [Eev] is the same as in
+eb2asc().
+
+The maximum length of a packed field is 16 bytes.  All other fields may
+have a maximum specifier (length or repetitions) of 32767.  These
+maxima are enforced.
+
+In most cases, you should use 'i' rather than 'I' when unpacking
+fullword integers.  Unsigned long integers are not handled cleanly by
+all systems.
+
 =item B<hexdump> STRING [STARTADDR [CHARSET]]
 
 Generate a hexadecimal dump of STRING.  The dump is similar to a
 SYSABEND dump in MVS: each line contains an address, 32 bytes of
 hexadecimal data, and the same data in printable form.  This function
-returns an array of lines, each of which is terminated with a newline.
+returns a list of lines, each of which is terminated with a newline.
 This allows them to be printed immediately; for instance, you can say
 "print hexdump($crud);".
 

@@ -7,6 +7,7 @@ installed it.
 
 asc2eb, eb2asc, eb2ascp:  ASCII/EBCDIC conversion
 pdi, pdo:  packed-decimal conversion
+unpackeb:  unpack and convert an EBCDIC record
 hexdump:  dump memory in an MVS-like format
 
 How to Install
@@ -20,7 +21,7 @@ The usual:
     make install
 
 If your C compiler defaults to signed rather than unsigned char (many
-do), you will see some warnings about type mismatches.  These are
+do), you may see some warnings about type mismatches.  These are
 harmless.  As long as the C code compiles correctly, the module should
 work.
 
@@ -35,7 +36,7 @@ compiling or installing this module, you can instead use IBM390p,
 which is a Perl-only version of the same functions.  This version is
 to be preferred, however; in my testing, the IBM390 versions of
 pdi, pdo, and fcs_xlate ran 5-6 times as fast as the pure Perl 
-versions.
+versions.  Also, unpackeb() is available only in IBM390.
 
 
 Geoffrey Rommel
@@ -43,4 +44,4 @@ Technical Consultant
 Sears, Roebuck and Co.
 grommel@sears.com
 
-January 1999
+June 1999

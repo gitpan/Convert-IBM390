@@ -10,3 +10,9 @@ Revision history for Perl extension Convert::IBM390.
 	  was not revealed by 'make test'.  Squished the bug; smoothed
 	  out the signed/unsigned business; added test for the buggy
 	  condition.
+
+0.03  Wed Jun  9 14:34:17 1999
+	- Added unpackeb(), ":all" tag.
+	- Eliminated the superfluous IBM390lib subdirectory.
+	- Smoothed out the signed/unsigned business some more.
+	- Corrected the package name in IBM390.xs.

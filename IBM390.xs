@@ -8,7 +8,7 @@ extern "C" {
 }
 #endif
 
-#include "./IBM390lib/IBM390lib.h"
+#include "./IBM390lib.h"
 
 static int
 not_here(s)
@@ -65,11 +65,11 @@ pdi(packed_num, ndec=0)
 	   }
 	}
 	if (inv_packed) {
-	   if ( SvTRUE(perl_get_sv("IBM390::warninv", FALSE)) )
+	   if ( SvTRUE(perl_get_sv("Convert::IBM390::warninv", FALSE)) )
 	      { warn("pdi: Invalid packed field"); }
 	   RETVAL = &sv_undef;
 	} else {
-	   RETVAL = newSVnv( CFUNC_pdi(packed_str, plen, ndec) );
+	   RETVAL = newSVnv( CF_pdi(packed_str, plen, ndec) );
 	}
 
 	OUTPUT:
@@ -84,21 +84,22 @@ pdo(perlnum, outbytes=8, ndec=0)
 	PROTOTYPE: $;$$
 	PREINIT:
 	double  perlnum_d;
-	unsigned char    packed_wk[16];
+	char    packed_wk[16];
 
 	CODE:
 	if (SvNIOK(perlnum) ) {
 	   perlnum_d = SvNV(perlnum);
-	   CFUNC_pdo(packed_wk, perlnum_d, outbytes, ndec);
-	   RETVAL = newSVpv((char *)packed_wk, outbytes);
+	   CF_pdo(packed_wk, perlnum_d, outbytes, ndec);
+	   RETVAL = newSVpv(packed_wk, outbytes);
 	} else {
-	   if ( SvTRUE(perl_get_sv("IBM390::warninv", FALSE)) )
+	   if ( SvTRUE(perl_get_sv("Convert::IBM390::warninv", FALSE)) )
 	      { warn("pdo: Input is not a number"); }
 	   RETVAL = &sv_undef;
 	}
 
 	OUTPUT:
 	RETVAL
+
 
  # Full Collating Sequence Translate -- like tr///, but assumes that
  # the searchstring is a complete 8-bit collating sequence
@@ -116,17 +117,36 @@ fcs_xlate(instring, to_table)
 	PREINIT:
 	int  instring_len;
 	STRLEN  pv_string_len;
-	unsigned char *  outstring_wk;
+	char *  outstring_wk;
 	unsigned char *  instring_copy;
 
 	CODE:
 	instring_len = (int) SvCUR(instring);
-	New(0, outstring_wk, instring_len, unsigned char);
-	instring_copy = SvPV(instring, pv_string_len);
-	CFUNC_fcs_xlate(outstring_wk, instring_copy, instring_len,
-	  (unsigned char *)to_table);
+	New(0, outstring_wk, instring_len, char);
+	instring_copy = (unsigned char *)SvPV(instring, pv_string_len);
+	CF_fcs_xlate(outstring_wk, instring_copy, instring_len,
+	  to_table);
 	RETVAL = newSVpv(outstring_wk, instring_len);
 	Safefree(outstring_wk);
+
+	OUTPUT:
+	RETVAL
+
+
+ # unpackeb -- Unpack an EBCDIC record
+ # Note that the EBCDIC data may contain nulls and other unprintable
+ # stuff, so we need an SV*, not just a char*.
+AV *
+unpackeb_XS(template, ebrecord, e2a_table)
+	char *	 template
+	SV *     ebrecord
+	char *   e2a_table
+	PROTOTYPE: $$$
+	PREINIT:
+
+	CODE:
+	RETVAL = newAV();
+	CF_unpackeb(RETVAL, template, ebrecord, e2a_table);
 
 	OUTPUT:
 	RETVAL

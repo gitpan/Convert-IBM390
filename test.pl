@@ -8,7 +8,7 @@
 
 BEGIN { $| = 1; print "1..9\n"; }
 END {print "not ok 1\n" unless $loaded;}
-use Convert::IBM390 qw(asc2eb eb2asc eb2ascp hexdump pdi pdo);
+use Convert::IBM390 qw(:all);
 $loaded = 1;
 print "ok 1\n";
 
@@ -59,16 +59,28 @@ was_it_ok(7, ! defined($perlnum));
 
 #----- pdo
 print "pdo..............";
-@perlnum = (5.67, 0, -89);
+@perlnum = (5.67, 0, -987);
 @pd = (pdo($perlnum[0], 3,2), pdo($perlnum[1],3), pdo($perlnum[2],3));
 was_it_ok(8, $pd[0] eq "\x00\x56\x7C" &&
     $pd[1] eq "\x00\x00\x0C" &&
-    $pd[2] eq "\x00\x08\x9D");
+    $pd[2] eq "\x00\x98\x7D");
 
 #----- pdo with undefined result
 print "   ..............";
 my $pd = pdo("notanumber");
 was_it_ok(9, ! defined($pd));
+
+#----- unpackeb
+print "unpackeb.........";
+open(UT, "./unptests")  or die "test.pl: could not open unptests: $!";
+chomp ($utempl = <UT>);
+chomp ($hexes = <UT>);
+chomp ($expected = <UT>);
+close UT;
+$hlen = length($hexes);
+$ebrecord = pack("H$hlen", $hexes);
+@unp = unpackeb($utempl, $ebrecord);
+was_it_ok(10, "<@unp>" eq "<$expected>");
 
 if ($failed == 0) { print "All tests successful.\n" }
 else {
