@@ -249,18 +249,19 @@ void CF_packeb (
           }
           break;
 
-      /* p: S/390 packed decimal.  In this case, the length given
+      /* [pP]: S/390 packed decimal.  In this case, the length given
          in the template is the length of a single field, not a
          number of repetitions. */
       case 'p':
+      case 'P':
           if (len > 16) {
-             croak("Field length too large in packeb: p%d", len);
+             croak("Field length too large in packeb: %c%d", datumtype, len);
           }
           item = *(av_fetch(fields_array, ii, 0));
           ii++;
           adouble = SvNV(item);
 
-          CF_num2packed(eb_work, adouble, len, ndec);
+          CF_num2packed(eb_work, adouble, len, ndec, datumtype=='P');
           sv_catpvn(outstring, eb_work, len);
           break;
 
@@ -452,6 +453,8 @@ int CF_unpackeb (
         if (len > strend - s)
            len = strend - s;
         CF_fcs_xlate(eb_work, s, len, eb_xlate_table);
+        if (len < 1)
+           eb_work[0] = 0x00;  /* Force an empty string. */
         sv = newSVpv(eb_work, len);
         s += len;
 

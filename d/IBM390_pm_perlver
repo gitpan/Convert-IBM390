@@ -10,7 +10,7 @@ require Exporter;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb hexdump
   packed2num num2packed zoned2num num2zoned fcs_xlate);
-$VERSION = '0.14';
+$VERSION = '0.15';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -49,18 +49,21 @@ $e2ap_table =
 # ASCII to EBCDIC
 sub asc2eb {
  my $String = shift;
+ return "" if $String eq "";
  return fcs_xlate($String, $a2e_table);
 }
 
 # EBCDIC to ASCII
 sub eb2asc {
  my $String = shift;
+ return "" if $String eq "";
  return fcs_xlate($String, $e2a_table);
 }
 
 # EBCDIC to ASCII printable
 sub eb2ascp {
  my $String = shift;
+ return "" if $String eq "";
  return fcs_xlate($String, $e2ap_table);
 }
 
@@ -152,11 +155,12 @@ sub packeb {
         last DSWITCH;
      }
 
-     # p: S/390 packed decimal.  $len is a field length.
-     if (/p/) {
-        Carp::croak("Field length too large in packeb: p$len") if $len > 16;
+     # [pP]: S/390 packed decimal.  $len is a field length.
+     if (/[pP]/) {
+        Carp::croak("Field length too large in packeb: $datumtype$len")
+            if $len > 16;
         $item = $inlist[$ii];  $ii++;
-        $result .= num2packed($item, $len, $ndec);
+        $result .= num2packed($item, $len, $ndec, $datumtype eq 'P');
         last DSWITCH;
      }
 
@@ -420,7 +424,7 @@ sub packed2num {
 
 # Convert a Perl number to a packed field.
 sub num2packed {
- my ($num, $outwidth, $ndec) = @_;
+ my ($num, $outwidth, $ndec, $fsign) = @_;
  $outwidth ||= 8;
  $ndec ||= 0;
  if ( $num !~ /^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/ ) {
@@ -432,7 +436,7 @@ sub num2packed {
  $outdig = $outwidth * 2 - 1;
 # sprintf will round to the appropriate number of places.
  $digits = sprintf("%0${outdig}.0f", abs($num * (10 ** $ndec)));
- $sign = ($num >= 0) ? "C" : "D";
+ $sign = ($num >= 0) ? (($fsign) ? "F" : "C") : "D";
  $outwidth *= 2;
  return pack("H$outwidth", $digits . $sign);
 }
@@ -494,6 +498,10 @@ sub fcs_xlate {
     $outstring .= substr($to_table, ord(substr($instring, $i,1)), 1);
  }
  return $outstring;
+}
+
+sub version {
+ return "Convert::IBM390 version $VERSION Perl only";
 }
 
 1;
@@ -567,6 +575,8 @@ options.  The following characters are allowed in the template:
   h  (1)  A hexadecimal string, high nybble always first
   i  (2)  Signed integer (S/390 fullword)
   p  (1)  Packed-decimal field (default length = 8)
+  P  (1)  Packed-decimal field with F signs for positive numbers
+          (sometimes called "unsigned") (default length = 8)
   s  (2)  Signed short integer (S/390 halfword)
   S  (2)  Unsigned short integer (2 bytes)	
   x  (2)  A null byte
@@ -607,6 +617,10 @@ value; e.g., packing .589 with "p3.6" would yield x'89000c'.
 If the input is not a valid Perl number, the results are unpredictable
 (since they depend on internal Perl code), but most likely the output
 field will contain zero.
+
+'p' will produce packed fields with the preferred sign characters: 
+C for positive, D for negative. 'P' will produce F for positive
+(sometimes called "unsigned") and D for negative.
 
 Zoned output will always have an overpunch in the last byte for the sign
 (e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L') for -3).  If
@@ -700,6 +714,12 @@ The second and third arguments are optional.  The second specifies
 a starting address for the dump (default = 0); the third specifies
 the character set to use for the printable data at the end of each
 line ("ascii" or "ebcdic", in upper or lower case; default = ascii).
+
+=item B<version>
+
+Returns a string identifying the version of this module.  This
+function is not exported; it must be called as
+C<Convert::IBM390::version>.
 
 =back
 

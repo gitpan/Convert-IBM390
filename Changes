@@ -66,3 +66,10 @@ Revision history for Perl extension Convert::IBM390.
 	- Modified Makefile.PL to see whether Perl is using sv_undef
 	  or PL_sv_undef and adjust things automatically.
 	- Small cosmetic changes.
+
+0.15  Tue Apr  9 14:20:12 2002
+	- Corrected bug in asc2eb, eb2asc, and eb2ascp when translating
+	  empty strings.
+	- Added 'P' option to packeb (suggested by a requirement from
+	  Tony Maa, grab3870@yahoo.com).
+	- Added version function.

@@ -79,7 +79,8 @@ void  CF_num2packed
   ( char  *packed_ptr,
     double perlnum,
     int    outbytes,
-    int    ndec )
+    int    ndec,
+    int    fsign )
 {
  int     outdigits, i;
  double  perl_absval;
@@ -91,7 +92,7 @@ void  CF_num2packed
   fprintf(stderr, "*D* CF_num2packed: beginning\n");
 #endif
  if (perlnum >= 0) {
-    perl_absval = perlnum;   signum = 0x0C;
+    perl_absval = perlnum;   signum = (fsign) ? 0x0F : 0x0C;
  } else {
     perl_absval = 0 - perlnum;  signum = 0x0D;
  }

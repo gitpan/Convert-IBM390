@@ -1,5 +1,5 @@
 package Convert::IBM390;
-$VERSION = '0.14';
+$VERSION = '0.15';
 
 #--- DUMMY ----------------------------------------------------------
 #
@@ -78,6 +78,8 @@ options.  The following characters are allowed in the template:
   h  (1)  A hexadecimal string, high nybble always first
   i  (2)  Signed integer (S/390 fullword)
   p  (1)  Packed-decimal field (default length = 8)
+  P  (1)  Packed-decimal field with F signs for positive numbers
+          (sometimes called "unsigned") (default length = 8)
   s  (2)  Signed short integer (S/390 halfword)
   S  (2)  Unsigned short integer (2 bytes)	
   x  (2)  A null byte
@@ -118,6 +120,10 @@ value; e.g., packing .589 with "p3.6" would yield x'89000c'.
 If the input is not a valid Perl number, the results are unpredictable
 (since they depend on internal Perl code), but most likely the output
 field will contain zero.
+
+'p' will produce packed fields with the preferred sign characters: 
+C for positive, D for negative. 'P' will produce F for positive
+(sometimes called "unsigned") and D for negative.
 
 Zoned output will always have an overpunch in the last byte for the sign
 (e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L') for -3).  If
@@ -211,6 +217,12 @@ The second and third arguments are optional.  The second specifies
 a starting address for the dump (default = 0); the third specifies
 the character set to use for the printable data at the end of each
 line ("ascii" or "ebcdic", in upper or lower case; default = ascii).
+
+=item B<version>
+
+Returns a string identifying the version of this module.  This
+function is not exported; it must be called as
+C<Convert::IBM390::version>.
 
 =back
 

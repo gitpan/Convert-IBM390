@@ -3,7 +3,7 @@
 
 ################## We start with some black magic to print on failure.
 
-BEGIN { $| = 1; print "1..8\n"; }
+BEGIN { $| = 1; print "1..11\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Convert::IBM390 qw(:all);
 $loaded = 1;
@@ -15,21 +15,33 @@ my $failed = 0;
 #----- asc2eb
 print "asc2eb...........";
 my ($asc, $eb);
+$asc = '';
+$eb = asc2eb($asc);
+was_it_ok(2, $eb eq '');
+print "      ...........";
 $asc = ".<(+|!\$*%\@=[]A2";
 $eb = asc2eb($asc);
-was_it_ok(2, $eb eq "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2");
+was_it_ok(3, $eb eq "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2");
 
 #----- eb2asc
 print "eb2asc...........";
+$eb = "";
+$asc = eb2asc($eb);
+was_it_ok(4, $asc eq "");
+print "      ...........";
 $eb = "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2";
 $asc = eb2asc($eb);
-was_it_ok(3, $asc eq ".<(+|!\$*%\@=[]A2");
+was_it_ok(5, $asc eq ".<(+|!\$*%\@=[]A2");
 
 #----- eb2ascp
 print "eb2ascp..........";
+$eb = "";
+$asc = eb2ascp($eb);
+was_it_ok(6, $asc eq "");
+print "       ..........";
 $eb = "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2\x00\xFE";
 $asc = eb2ascp($eb);
-was_it_ok(4, $asc eq ".<(+|!\$*%\@=[]A2  ");
+was_it_ok(7, $asc eq ".<(+|!\$*%\@=[]A2  ");
 
 #----- hexdump
 print "hexdump..........";
@@ -37,7 +49,7 @@ my ($string, @hdump);
 $string = "Now is the time for all good Perls to come to the aid of
 their systems";
 @hdump = hexdump($string, 4);
-was_it_ok(5, (@hdump == 3) && $hdump[0] eq 
+was_it_ok(8, (@hdump == 3) && $hdump[0] eq 
   "000004: 4E6F7720 69732074 68652074 696D6520  666F7220 616C6C20 676F6F64 20506572  *Now is the time for all good Per*\n");
 
 #----- packeb
@@ -49,7 +61,7 @@ chomp ($hexes = <PT>);
 close PT;
 $expected = pack("H*", $hexes);
 $ebrecord = packeb($ptempl, @input);
-was_it_ok(6, $ebrecord eq $expected);
+was_it_ok(9, $ebrecord eq $expected);
 
 #----- unpackeb
 print "unpackeb.........";
@@ -60,13 +72,13 @@ chomp ($expected = <UT>);
 close UT;
 $ebrecord = pack("H*", $hexes);
 @unp = unpackeb($utempl, $ebrecord);
-was_it_ok(7, "<@unp>" eq "<$expected>");
+was_it_ok(10, "<@unp>" eq "<$expected>");
 
 #----- unpackeb with undefined results
 print "        .........";
 $ebrecord = pack("H12", "C500FFFEC1C2");
 ($pp, $vv) = unpackeb("p2v", $ebrecord);
-was_it_ok(8, !defined($pp) && !defined($vv));
+was_it_ok(11, !defined($pp) && !defined($vv));
 
 if ($failed == 0) { print "All tests successful.\n"; }
 else {
