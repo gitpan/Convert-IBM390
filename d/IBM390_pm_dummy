@@ -1,5 +1,5 @@
 package Convert::IBM390;
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 #--- DUMMY ----------------------------------------------------------
 #
@@ -228,7 +228,8 @@ None, of course.  What do you think this is -- Unix?
 
 =head1 AUTHOR
 
-Convert::IBM390 was written by Geoffrey Rommel E<lt>grommel@sears.comE<gt>
+Convert::IBM390 was written by Geoffrey Rommel
+E<lt>grommel@webley.comE<gt>
 in January 1999.
 
 =cut

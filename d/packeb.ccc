@@ -368,8 +368,8 @@ int _halfword (
 
 
 /*---------- Unpack an EBCDIC record ----------*/
-void CF_unpackeb (
-  AV   * result_array,
+int CF_unpackeb (
+  SV  ** ret_svs,
   char * pat,
   SV   * ebrecord,
   char * eb_xlate_table )
@@ -382,7 +382,7 @@ void CF_unpackeb (
  register char *patend;
  char datumtype;
  register I32 len;
- int i, j, ndec, fieldlen;
+ int i, j, ndec, fieldlen, nelems;
 
  /* Work fields */
  I32 along;
@@ -397,6 +397,7 @@ void CF_unpackeb (
   fprintf(stderr, "*D* CF_unpackeb: beginning\n");
 #endif
  patend = pat + strlen(pat);
+ nelems = 0;  /* Number of elements -- return value of this fn. */
 
  while (pat < patend) {
     datumtype = *pat++;
@@ -449,7 +450,8 @@ void CF_unpackeb (
         sv = newSVpv(eb_work, len);
         s += len;
 
-        av_push(result_array, sv);
+	ret_svs[nelems] = sv;
+        nelems++;
         break;
 
     /* p: S/390 packed decimal.  In this case, the length given
@@ -469,7 +471,8 @@ void CF_unpackeb (
         }
 
         s += len;
-        av_push(result_array, sv);
+	ret_svs[nelems] = sv;
+        nelems++;
         break;
 
     /* z: S/390 zoned decimal.  In this case, the length given
@@ -489,7 +492,8 @@ void CF_unpackeb (
         }
 
         s += len;
-        av_push(result_array, sv);
+	ret_svs[nelems] = sv;
+        nelems++;
         break;
 
     /* [Cc]: characters without translation */
@@ -499,7 +503,8 @@ void CF_unpackeb (
            len = strend - s;
         sv = newSVpv(s, len);
         s += len;
-        av_push(result_array, sv);
+	ret_svs[nelems] = sv;
+        nelems++;
         break;
 
     /* i: integer (System/390 fullword) */
@@ -515,7 +520,8 @@ void CF_unpackeb (
            } 
 
            sv = newSViv(along);
-           av_push(result_array, sv);
+	   ret_svs[nelems] = sv;
+           nelems++;
         }
         break;
 
@@ -528,7 +534,8 @@ void CF_unpackeb (
            s += 2;
 
            sv = newSViv(along);
-           av_push(result_array, sv);
+	   ret_svs[nelems] = sv;
+           nelems++;
         }
         break;
 
@@ -554,7 +561,8 @@ void CF_unpackeb (
                sv = newSVpv(eb_work, fieldlen);
             }
             s += fieldlen;
-            av_push(result_array, sv);
+	    ret_svs[nelems] = sv;
+            nelems++;
         }
         break;
 
@@ -583,7 +591,8 @@ void CF_unpackeb (
            }
 
            sv = newSVnv((double) alonglong);
-           av_push(result_array, sv);
+	   ret_svs[nelems] = sv;
+           nelems++;
         }
         break;
 
@@ -597,7 +606,8 @@ void CF_unpackeb (
            along += (unsigned char) *s;  s++;
 
            sv = newSViv(along);
-           av_push(result_array, sv);
+	   ret_svs[nelems] = sv;
+           nelems++;
         }
         break;
 
@@ -609,5 +619,5 @@ void CF_unpackeb (
 #ifdef DEBUG390
   fprintf(stderr, "*D* CF_unpackeb: returning\n");
 #endif
- return;
+ return nelems;
 }

@@ -12,7 +12,7 @@ require AutoLoader;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb
    hexdump fcs_xlate);
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -107,8 +107,8 @@ sub packeb {
 # Unpack an EBCDIC record
 sub unpackeb {
  my ($template, $ebrecord) = @_;
- my $uref = unpackeb_XS($template, $ebrecord, $e2a_table);
- return (wantarray) ? @$uref : $uref->[0];
+ my @unp = unpackeb_XS($template, $ebrecord, $e2a_table);
+ return (wantarray) ? @unp : $unp[0];
 }
 
 
@@ -358,7 +358,8 @@ None, of course.  What do you think this is -- Unix?
 
 =head1 AUTHOR
 
-Convert::IBM390 was written by Geoffrey Rommel E<lt>grommel@sears.comE<gt>
+Convert::IBM390 was written by Geoffrey Rommel
+E<lt>grommel@webley.comE<gt>
 in January 1999.
 
 =cut

@@ -53,3 +53,11 @@ Revision history for Perl extension Convert::IBM390.
 	- Added "#include <stdio.h>" to IBM390lib.ccc (don't know how
 	  I missed that one!).
 	- Small cosmetic changes.
+
+0.12  Mon Jan 15 08:51:47 2001
+	- Redesigned XS version to correct a bad memory leak.  Thanks
+	  to Barry Roomberg (BROOM@ccgroupnet.com) and another user
+	  for pointing this out and providing test code.  Unfortunately,
+	  I had to put a limit on the number of values returned by
+	  unpackeb, but it's fairly generous (4400).
+	- New e-mail address for yours truly.

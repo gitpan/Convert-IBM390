@@ -35,7 +35,7 @@ not_there:
 }
 
 
-MODULE = Convert::IBM390		PACKAGE = Convert::IBM390		
+MODULE = Convert::IBM390		PACKAGE = Convert::IBM390
 
 
  # Full Collating Sequence Translate -- like tr///, but assumes that
@@ -111,23 +111,27 @@ packeb_XS(template, values_ref, a2e_table)
  # unpackeb -- Unpack an EBCDIC record
  # Note that the EBCDIC data may contain nulls and other unprintable
  # stuff, so we need an SV*, not just a char*.
-AV *
+ # The returned values come back as an array of SV*s; we mortalize
+ # them and put them on the stack.
+void
 unpackeb_XS(template, ebrecord, e2a_table)
 	char *  template
 	SV *    ebrecord
 	char *  e2a_table
 	PROTOTYPE: $$$
 	PREINIT:
+	int     nelems, i;
+	SV *	ret_svs[4400]; /* The series of returned SV*s */
 
-	CODE:
+	PPCODE:
 #ifdef DEBUG390
 	fprintf(stderr, "*D* unpackeb_XS: beginning\n");
 #endif
-	RETVAL = newAV();
-	CF_unpackeb(RETVAL, template, ebrecord, e2a_table);
+	nelems = CF_unpackeb(ret_svs, template, ebrecord, e2a_table);
+	for (i = 0; i < nelems; i++) {
+	   XPUSHs(sv_2mortal(ret_svs[i]));
+	}
 #ifdef DEBUG390
-	fprintf(stderr, "*D* unpackeb_XS: returning\n");
+	fprintf(stderr, "*D* unpackeb_XS: returning %d elements\n",
+	  nelems);
 #endif
-
-	OUTPUT:
-	RETVAL
