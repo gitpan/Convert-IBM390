@@ -13,17 +13,12 @@ hexdump:  dump memory in an MVS-like format
 How to Install
 ==============
 
-The usual:
-
     perl Makefile.PL
     make
     make test
     make install
 
-If your C compiler defaults to signed rather than unsigned char (many
-do), you may see some warnings about type mismatches.  These are
-harmless.  As long as the C code compiles correctly, the module should
-work.
+For more details, see INSTALL.
 
 One More Note
 =============

@@ -1,18 +1,18 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl test.pl'
 
-######################### We start with some black magic to print on failure.
+################## We start with some black magic to print on failure.
 
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..9\n"; }
+BEGIN { $| = 1; print "1..11\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Convert::IBM390 qw(:all);
 $loaded = 1;
 print "ok 1\n";
 
-######################### End of black magic.
+################## End of black magic.
 
 my $failed = 0;
 #----- asc2eb
@@ -82,10 +82,17 @@ $ebrecord = pack("H$hlen", $hexes);
 @unp = unpackeb($utempl, $ebrecord);
 was_it_ok(10, "<@unp>" eq "<$expected>");
 
-if ($failed == 0) { print "All tests successful.\n" }
+#----- unpackeb with undefined results
+print "        .........";
+$ebrecord = pack("H12", "C500FFFEC1C2");
+($pp, $vv) = unpackeb("p2v", $ebrecord);
+was_it_ok(11, !defined($pp) && !defined($vv));
+
+
+if ($failed == 0) { print "All tests successful.\n"; }
 else {
-   $ess = ($failed == 1) ? "" : "s";
-   print "$failed test$ess failed!  There is no joy in Mudville.\n";
+   $tt = ($failed == 1) ? "1 test" : "$failed tests";
+   print "$tt failed!  There is no joy in Mudville.\n";
 }
 
 

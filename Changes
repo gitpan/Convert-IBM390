@@ -16,3 +16,9 @@ Revision history for Perl extension Convert::IBM390.
 	- Eliminated the superfluous IBM390lib subdirectory.
 	- Smoothed out the signed/unsigned business some more.
 	- Corrected the package name in IBM390.xs.
+
+0.04  Wed Jun 23 08:11:54 1999
+	- Made $warninv global.
+	- Further (final?) signed/unsigned improvements.
+	- Added validity checking and 'x' option to unpackeb.
+	- Added debugging option.

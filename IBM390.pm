@@ -10,16 +10,16 @@ require AutoLoader;
 
 @ISA = qw(Exporter DynaLoader);
 @EXPORT = qw();
-@EXPORT_OK = qw(asc2eb eb2asc eb2ascp hexdump pdi pdo
+@EXPORT_OK = qw(asc2eb eb2asc eb2ascp pdi pdo hexdump
    unpackeb fcs_xlate);
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
 
 # $warninv = issue warning message if a field is invalid.  Default
 # is FALSE (don't issue the message).  Used by pdi and pdo.
-my $warninv = 0;
+$Convert::IBM390::warninv = 0;
 
 my ($a2e_table, $e2a_table, $e2ap_table);
 $a2e_table = pack "H512",
@@ -238,9 +238,10 @@ options.  The following characters are allowed in the template:
   s      (2)   Signed short integer (S/390 halfword)
   S      (2)   Unsigned short integer (2 bytes)	
   v      (2)   EBCDIC varchar string
+  x      (1)   Ignore these bytes
 
  (1) May be followed by a number giving the length of the field.
- (2) May be followed by a number giving the number of repetitions.
+ (2) May be followed by a number giving the repeat count.
 
 Each character may be followed by a number giving either the length
 of the field or a repeat count, as shown above, or by '*', which means
@@ -253,21 +254,24 @@ which is added after the byte count and a '.'.  For instance, "p3.2"
 indicates a 3-byte (5-digit) packed field with 2 implied decimal
 places; if this field contains x'02468C', the result will be 24.68.
 The number of implied decimals may be greater than the number of digits;
-e.g., unpacking the above field with "p3.6" would yield 0.002468.
+e.g., unpacking the above field with "p3.6" would yield 0.002468.  If
+the field is not a valid packed field, the resulting element of the
+list will be undefined.
 
 Varchar (v) fields are assumed to consist of a signed halfword (16-bit)
-integer followed by EBCDIC characters.  This format is used, for
+integer followed by EBCDIC characters.  If the number appearing in the
+initial halfword is N, the following N bytes are translated from EBCDIC
+to ASCII and returned as one string.  This format is used, for
 instance, by DB2/MVS.  A repeat count may be specified; e.g., "v2" does
 not mean a length of 2 bytes, but that there are two such fields in
-succession.  If the number appearing in the initial halfword is N,
-the following N bytes are translated from EBCDIC to ASCII and returned
-as one string.
+succession.  If the length is found to be less than 0, the resulting
+element of the list will be undefined.
 
 The EBCDIC-to-ASCII translation used by [Eev] is the same as in
 eb2asc().
 
 The maximum length of a packed field is 16 bytes.  All other fields may
-have a maximum specifier (length or repetitions) of 32767.  These
+have a maximum specifier (length or repeat count) of 32767.  These
 maxima are enforced.
 
 In most cases, you should use 'i' rather than 'I' when unpacking

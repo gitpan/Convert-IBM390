@@ -1,4 +1,5 @@
-double  CF_pdi ( unsigned char *, int, int );
+int     _valid_packed ( char *, int );
+double  CF_pdi ( char *, int, int );
 void    CF_pdo ( char *, double, int, int );
-void    CF_fcs_xlate ( char *, unsigned char *, int, char * );
+void    CF_fcs_xlate ( char *, char *, int, char * );
 void    CF_unpackeb ( AV *, char *, SV *, char * );

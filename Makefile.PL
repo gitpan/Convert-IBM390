@@ -6,6 +6,8 @@ WriteMakefile(
     'VERSION_FROM' => 'IBM390.pm', # finds $VERSION
     'LIBS'	=> ['-lm'],
     'OBJECT'    => 'IBM390.o IBM390lib.o',
-    'DEFINE'	=> '',    # e.g., '-DHAVE_SOMETHING' 
-    'INC'	=> '',    # e.g., -I/cdwh/perl5/lib/5.00502/aix/CORE',
+    'DEFINE'	=> '',
+#    'DEFINE'	=> '-DDEBUG390',    # if debugging is desired
+    'INC'	=> '',    # e.g., -I/usr/local/lib/.../CORE
+    'dist'	=> { COMPRESS=>'gzip', SUFFIX=>'gz' },
 );

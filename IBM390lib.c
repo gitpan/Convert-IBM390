@@ -8,25 +8,59 @@
 ----------------------------------------------------------*/
 
 
+/*---------- Test for a valid packed decimal field ----------*/
+int _valid_packed (
+  char * packed_str,
+  int    plen )
+{
+ int   i;
+ unsigned char pdigits;
+
+#ifdef DEBUG390
+  fprintf(stderr, "*D* _valid_packed: beginning\n");
+#endif
+ for (i = 0; i < plen; i++) {
+    pdigits = (unsigned char) packed_str[i];
+    if (i < plen - 1) {
+       if (((pdigits & 0xF0) > 0x90) || ((pdigits & 0x0F) > 0x09))
+          { return 0; }
+    } else {
+       if (((pdigits & 0xF0) > 0x90) || ((pdigits & 0x0F) < 0x0A))
+          { return 0; }
+    }
+ }
+
+#ifdef DEBUG390
+  fprintf(stderr, "*D* _valid_packed: returning 1\n");
+#endif
+ return 1;
+}
+
+
 /*---------- Packed Decimal In ----------*/
 double  CF_pdi
-  ( unsigned char * packed,
+  ( char * packed,
     int    plength,
     int    ndec )
 {
- double  out_num = 0;
- short   inv_packed, i;
- unsigned char  signum;
+ double  out_num;
+ short   i;
+ unsigned char  pdigits, signum;
 
+#ifdef DEBUG390
+  fprintf(stderr, "*D* CF_pdi: beginning\n");
+#endif
+ out_num = 0.0;
  for (i = 0; i < plength; i++) {
-    out_num = (out_num * 10) + (*(packed + i) >> 4);
+    pdigits = (unsigned char) *(packed + i);
+    out_num = (out_num * 10) + (pdigits >> 4);
     if (i < plength - 1)
-       out_num = (out_num * 10) + (*(packed + i) & 0x0F);
+       out_num = (out_num * 10) + (pdigits & 0x0F);
     else
-       signum = *(packed + i) & 0x0F;
+       signum = pdigits & 0x0F;
  }
  if (signum == 0x0D || signum == 0x0B) {
-    out_num = 0 - out_num;
+    out_num = -out_num;
  }
 
   /* If ndec is 0, we're finished; if it's nonzero,
@@ -35,6 +69,9 @@ double  CF_pdi
     out_num = out_num / pow(10.0, (double) ndec);
  }
 
+#ifdef DEBUG390
+  fprintf(stderr, "*D* CF_pdi: returning %f\n", out_num);
+#endif
  return out_num;
 }
 
@@ -52,6 +89,9 @@ void  CF_pdo
  char   *digit_ptr, *out_ptr;
  char    signum;
 
+#ifdef DEBUG390
+  fprintf(stderr, "*D* CF_pdo: beginning\n");
+#endif
  if (perlnum >= 0) {
     perl_absval = perlnum;   signum = 0x0C;
  } else {
@@ -72,6 +112,9 @@ void  CF_pdo
     out_ptr++;
  }
 
+#ifdef DEBUG390
+  fprintf(stderr, "*D* CF_pdo: returning\n");
+#endif
  return;
 }
 
@@ -79,18 +122,27 @@ void  CF_pdo
 /*---------- Full Collating Sequence Translate ----------*/
 void  CF_fcs_xlate
   ( char  *outstring,
-    unsigned char  *instring,
+    char  *instring,
     int    instring_len,
     char  *to_table )
 {
  char  *out_ptr;
+ unsigned char offset;
  int    i;
 
+#ifdef DEBUG390
+  fprintf(stderr, "*D* CF_fcs_xlate: beginning\n");
+#endif
  out_ptr = outstring;
  for (i = 0; i < instring_len; i++) {
-    (*out_ptr) = *(to_table + *(instring + i));
+    offset = (unsigned char) *(instring + i);
+    (*out_ptr) = *(to_table + offset);
     out_ptr++;
  }
+
+#ifdef DEBUG390
+  fprintf(stderr, "*D* CF_fcs_xlate: returning\n");
+#endif
  return;
 }
 
@@ -134,12 +186,14 @@ void CF_unpackeb (
 
  /* Work fields */
  I32 along;
- U32 aulong;
  long long alonglong;
  /* Some day we may want to support S/390 floats.... */
- float afloat;
+ /*float afloat;*/
  double adouble;
 
+#ifdef DEBUG390
+  fprintf(stderr, "*D* CF_unpackeb: beginning\n");
+#endif
  patend = pat + strlen(pat);
 
  while (pat < patend) {
@@ -177,10 +231,11 @@ void CF_unpackeb (
           datumtype, len);
     }
 
+#ifdef DEBUG390
+    fprintf(stderr, "*D* CF_unpackeb: datumtype/len %c%d\n",
+      datumtype, len);
+#endif
     switch(datumtype) {
-    default:
-        croak("Invalid type in unpackeb: '%c'", datumtype);
-
     /* [eE]: EBCDIC character string.  In this case, the length
        given in the template is the length of a single field, not
        a number of repetitions. */
@@ -189,13 +244,11 @@ void CF_unpackeb (
         if (len > strend - s)
            len = strend - s;
         if (len <= 260) {
-           CF_fcs_xlate(eb_work, (unsigned char *)s, len,
-             eb_xlate_table);
+           CF_fcs_xlate(eb_work, s, len, eb_xlate_table);
            sv = newSVpv(eb_work, len);
         } else {
            New(0, eb_longwork, len, char);
-           CF_fcs_xlate(eb_longwork, (unsigned char *)s, len,
-             eb_xlate_table);
+           CF_fcs_xlate(eb_longwork, s, len, eb_xlate_table);
            sv = newSVpv(eb_longwork, len);
            Safefree(eb_longwork);
         }
@@ -212,10 +265,14 @@ void CF_unpackeb (
         if (len > 16) {
            croak("Field length too large in unpackeb: p%d", len);
         }
-        adouble = CF_pdi((unsigned char *)s, len, ndec);
-        s += len;
+	if ( _valid_packed(s, len) ) {
+           adouble = CF_pdi(s, len, ndec);
+           sv = newSVnv(adouble);
+        } else {
+           sv = &sv_undef;
+        }
 
-        sv = newSVnv(adouble);
+        s += len;
         av_push(result_array, sv);
         break;
 
@@ -272,22 +329,29 @@ void CF_unpackeb (
 
             if (fieldlen > strend - s)
                fieldlen = strend - s;
-            if (fieldlen == 0) {
+            if (fieldlen < 0) {
+               sv = &sv_undef;
+            } else if (fieldlen == 0) {
                sv = newSVpv("", 0);
             } else if (fieldlen <= 260) {
-               CF_fcs_xlate(eb_work, (unsigned char *)s,
-                 fieldlen, eb_xlate_table);
+               CF_fcs_xlate(eb_work, s, fieldlen, eb_xlate_table);
                sv = newSVpv(eb_work, fieldlen);
             } else {
                New(0, eb_longwork, fieldlen, char);
-               CF_fcs_xlate(eb_longwork, (unsigned char *)s,
-                 fieldlen, eb_xlate_table);
+               CF_fcs_xlate(eb_longwork, s, fieldlen, eb_xlate_table);
                sv = newSVpv(eb_longwork, fieldlen);
                Safefree(eb_longwork);
             }
             s += fieldlen;
             av_push(result_array, sv);
         }
+        break;
+
+    /* x: ignore these bytes (do not return an element) */
+    case 'x':
+        if (len > strend - s)
+           len = strend - s;
+        s += len;
         break;
 
     /* I: unsigned integer (fullword) */
@@ -325,6 +389,14 @@ void CF_unpackeb (
            av_push(result_array, sv);
         }
         break;
+
+    default:
+        croak("Invalid type in unpackeb: '%c'", datumtype);
     }
  }
+
+#ifdef DEBUG390
+  fprintf(stderr, "*D* CF_unpackeb: returning\n");
+#endif
+ return;
 }

@@ -46,31 +46,29 @@ pdi(packed_num, ndec=0)
 	PROTOTYPE: $;$
 	PREINIT:
 	STRLEN plen;
-	unsigned char  packed_str[16];
+	char   packed_str[16];
 	char  *pv_input;
 	int    i, inv_packed;
 
 	CODE:
+#ifdef DEBUG390
+	fprintf(stderr, "*D* pdi: beginning\n");
+#endif
 	pv_input = SvPV(packed_num, plen);
 	memcpy(packed_str, pv_input, (int) plen);
-	  /* Check packed field for validity. */
-	inv_packed = 0;
-	for (i = 0; i < plen; i++) {
-	   if (i < plen - 1) {
-	      inv_packed += ((packed_str[i] & 0xF0) > 0x90) ||
-	        ((packed_str[i] & 0x0F) > 0x09);
-	   } else {
-	      inv_packed += ((packed_str[i] & 0xF0) > 0x90) ||
-	        ((packed_str[i] & 0x0F) < 0x0A);
-	   }
-	}
-	if (inv_packed) {
+#ifdef DEBUG390
+	fprintf(stderr, "*D* pdi: memcpy succeeded\n");
+#endif
+	if ( _valid_packed(packed_str, plen) ) {
+	   RETVAL = newSVnv( CF_pdi(packed_str, plen, ndec) );
+	} else {
 	   if ( SvTRUE(perl_get_sv("Convert::IBM390::warninv", FALSE)) )
 	      { warn("pdi: Invalid packed field"); }
 	   RETVAL = &sv_undef;
-	} else {
-	   RETVAL = newSVnv( CF_pdi(packed_str, plen, ndec) );
 	}
+#ifdef DEBUG390
+	fprintf(stderr, "*D* pdi: returning\n");
+#endif
 
 	OUTPUT:
 	RETVAL
@@ -87,6 +85,9 @@ pdo(perlnum, outbytes=8, ndec=0)
 	char    packed_wk[16];
 
 	CODE:
+#ifdef DEBUG390
+	fprintf(stderr, "*D* pdo: beginning\n");
+#endif
 	if (SvNIOK(perlnum) ) {
 	   perlnum_d = SvNV(perlnum);
 	   CF_pdo(packed_wk, perlnum_d, outbytes, ndec);
@@ -96,6 +97,9 @@ pdo(perlnum, outbytes=8, ndec=0)
 	      { warn("pdo: Input is not a number"); }
 	   RETVAL = &sv_undef;
 	}
+#ifdef DEBUG390
+	fprintf(stderr, "*D* pdo: returning\n");
+#endif
 
 	OUTPUT:
 	RETVAL
@@ -118,16 +122,25 @@ fcs_xlate(instring, to_table)
 	int  instring_len;
 	STRLEN  pv_string_len;
 	char *  outstring_wk;
-	unsigned char *  instring_copy;
+	char *  instring_copy;
 
 	CODE:
+#ifdef DEBUG390
+	fprintf(stderr, "*D* fcs_xlate: beginning\n");
+#endif
 	instring_len = (int) SvCUR(instring);
 	New(0, outstring_wk, instring_len, char);
-	instring_copy = (unsigned char *)SvPV(instring, pv_string_len);
+	instring_copy = SvPV(instring, pv_string_len);
+#ifdef DEBUG390
+	fprintf(stderr, "*D* fcs_xlate: input string copied\n");
+#endif
 	CF_fcs_xlate(outstring_wk, instring_copy, instring_len,
 	  to_table);
 	RETVAL = newSVpv(outstring_wk, instring_len);
 	Safefree(outstring_wk);
+#ifdef DEBUG390
+	fprintf(stderr, "*D* fcs_xlate: returning\n");
+#endif
 
 	OUTPUT:
 	RETVAL
@@ -145,8 +158,14 @@ unpackeb_XS(template, ebrecord, e2a_table)
 	PREINIT:
 
 	CODE:
+#ifdef DEBUG390
+	fprintf(stderr, "*D* unpackeb_XS: beginning\n");
+#endif
 	RETVAL = newAV();
 	CF_unpackeb(RETVAL, template, ebrecord, e2a_table);
+#ifdef DEBUG390
+	fprintf(stderr, "*D* unpackeb_XS: returning\n");
+#endif
 
 	OUTPUT:
 	RETVAL
