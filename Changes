@@ -56,10 +56,10 @@ Revision history for Perl extension Convert::IBM390.
 
 0.12  Mon Jan 15 08:51:47 2001
 	- Redesigned XS version to correct a bad memory leak.  Thanks
-	  to Barry Roomberg (BROOM@ccgroupnet.com) and another user
-	  for pointing this out and providing test code.  Unfortunately,
-	  I had to put a limit on the number of values returned by
-	  unpackeb, but it's fairly generous (4400).
+	  to Barry Roomberg and another user for pointing this out
+	  and providing test code.  Unfortunately, I had to put a
+	  limit on the number of values returned by unpackeb, but
+	  it's fairly generous (4400).
 	- New e-mail address for yours truly.
 
 0.14  Mon Mar 12 14:41:31 2001
@@ -71,7 +71,7 @@ Revision history for Perl extension Convert::IBM390.
 	- Corrected bug in asc2eb, eb2asc, and eb2ascp when translating
 	  empty strings.
 	- Added 'P' option to packeb (suggested by a requirement from
-	  Tony Maa, grab3870@yahoo.com).
+	  Tony Maa).
 	- Added version function.
 
 0.16  Tue Nov 18 08:44:02 2003
@@ -82,12 +82,15 @@ Revision history for Perl extension Convert::IBM390.
 
 0.17  Wed Dec 24 09:19:59 2003
 	- Added the SMF timestamp data type at the request of Champ
-	  Lee (champl@charter.net).
+	  Lee.
 
 0.18  Mon Mar 15 14:02:30 2004
 	- Made performance improvements to the XS/C version: moved the
 	  translation tables into the C code, moved asc2eb etc. to
 	  the .xs file rather than .pm, avoided storage allocations.
 	- Added trailing blank/null suppression to unpackeb('E'...).
-	- Thanks are due to Jeffrey Horner <jeffrey_horner@yahoo.com>
-	  for these suggestions.
+	- Thanks are due to Jeffrey Horner for these suggestions.
+
+0.19  Wed Jul 14 16:39:54 2004
+	- Corrected a bug in unpackeb's integer conversions. Thanks
+	  to Taavo Raykoff for pointing this out.

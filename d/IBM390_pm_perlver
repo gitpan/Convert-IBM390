@@ -11,7 +11,7 @@ require Exporter;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb hexdump
   packed2num num2packed zoned2num num2zoned fcs_xlate);
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 

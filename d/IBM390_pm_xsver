@@ -12,7 +12,7 @@ require AutoLoader;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb
    hexdump);
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 

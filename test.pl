@@ -56,22 +56,38 @@ was_it_ok(8, $hdump[0],
 
 #----- packeb
 print "packeb...........";
+$ptempl = $in = $hexes = '';
 open(PT, "./packtests")  or die "test.pl: could not open packtests: $!";
-chomp ($ptempl = <PT>);
-chomp ($in = <PT>); @input = split(' ', $in);
-chomp ($hexes = <PT>);
+while (1) {
+   chomp ($a = <PT>);
+   last if length($a) == 0;
+   $ptempl .= $a;
+   chomp ($b = <PT>);
+   $in .= " $b";
+   chomp ($c = <PT>);
+   $hexes .= $c;
+}
 close PT;
+@input = split(' ', $in);
 $expected = pack("H*", $hexes);
 $ebrecord = packeb($ptempl, @input);
 was_it_ok(9, $ebrecord, $expected);
 
 #----- unpackeb
 print "unpackeb.........";
+$utempl = $hexes = $expected = '';
 open(UT, "./unptests")  or die "test.pl: could not open unptests: $!";
-chomp ($utempl = <UT>);
-chomp ($hexes = <UT>);
-chomp ($expected = <UT>);
+while (1) {
+   chomp ($a = <UT>);
+   last if length($a) == 0;
+   $utempl .= $a;
+   chomp ($b = <UT>);
+   $hexes .= $b;
+   chomp ($c = <UT>);
+   $expected .= " $c";
+}
 close UT;
+$expected = substr($expected, 1); # Remove leading blank.
 $ebrecord = pack("H*", $hexes);
 @unp = unpackeb($utempl, $ebrecord);
 was_it_ok(10, "@unp", $expected);
@@ -95,7 +111,14 @@ sub was_it_ok {
 
  if ($res eq $exp) { print "ok $num\n"; }
  else   { print "not ok $num\n"; $failed++; }
- print "  expected: <$exp>\n  actual:   <$res>\n" if $VERBOSE;
+ if ($VERBOSE) {
+    if ($exp =~ /[\x00-\x07\x0E-\x1E]/) {
+       print "  expected: <",unpack("H*",$exp), ">\n";
+       print "  actual:   <",unpack("H*",$res), ">\n";
+    } else {
+       print "  expected: <$exp>\n  actual:   <$res>\n";
+    }
+ }
 }
 
 #--- The same, but just a number and one Boolean argument.

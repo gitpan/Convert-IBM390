@@ -64,6 +64,6 @@ WriteMakefile(
 #    'DEFINE'	=> "$p_define -DDEBUG390",   # if debugging is desired
     'INC'	=> '',    # e.g., -I/usr/local/lib/.../CORE
     'clean'	=> { FILES => 'IBM390.pm IBM390lib.c IBM390lib.h ' },
-    'dist'	=> { COMPRESS=>'gzip' },
+    'dist'	=> { PREOP => 'cp -p d/IBM390_pm_dummy IBM390.pm' },
     @perlonly,
 );

@@ -61,14 +61,14 @@ asc2eb(instring_sv)
 	char *  instring;
 	char *  outstring_wk;
 	 /* To avoid allocating small amounts of storage: */
-	char    shorty[516];
+	char    shorty[1024];
 
 	PPCODE:
 	instring = SvPV(instring_sv, ilength);
 #ifdef DEBUG390
 	fprintf(stderr, "*D* asc2eb: beginning; length %d\n", ilength);
 #endif
-	if (ilength <= 512) {
+	if (ilength <= 1024) {
 	   CF_fcs_xlate(shorty, instring, ilength, a2e_table);
 	   PUSHs(sv_2mortal(newSVpvn(shorty, ilength)));
 	} else {
@@ -90,14 +90,14 @@ eb2asc(instring_sv)
 	char *  instring;
 	char *  outstring_wk;
 	 /* To avoid allocating small amounts of storage: */
-	char    shorty[516];
+	char    shorty[1024];
 
 	PPCODE:
 	instring = SvPV(instring_sv, ilength);
 #ifdef DEBUG390
 	fprintf(stderr, "*D* eb2asc: beginning; length %d\n", ilength);
 #endif
-	if (ilength <= 512) {
+	if (ilength <= 1024) {
 	   CF_fcs_xlate(shorty, instring, ilength, e2a_table);
 	   PUSHs(sv_2mortal(newSVpvn(shorty, ilength)));
 	} else {
@@ -119,14 +119,14 @@ eb2ascp(instring_sv)
 	char *  instring;
 	char *  outstring_wk;
 	 /* To avoid allocating small amounts of storage: */
-	char    shorty[516];
+	char    shorty[1024];
 
 	PPCODE:
 	instring = SvPV(instring_sv, ilength);
 #ifdef DEBUG390
 	fprintf(stderr, "*D* eb2ascp: beginning; length %d\n", ilength);
 #endif
-	if (ilength <= 512) {
+	if (ilength <= 1024) {
 	   CF_fcs_xlate(shorty, instring, ilength, e2ap_table);
 	   PUSHs(sv_2mortal(newSVpvn(shorty, ilength)));
 	} else {
