@@ -46,7 +46,7 @@ pdi(packed_num, ndec=0)
 	PROTOTYPE: $;$
 	PREINIT:
 	STRLEN plen;
-	unsigned char packed_str[16];
+	unsigned char  packed_str[16];
 	char  *pv_input;
 	int    i, inv_packed;
 
@@ -67,7 +67,7 @@ pdi(packed_num, ndec=0)
 	if (inv_packed) {
 	   if ( SvTRUE(perl_get_sv("IBM390::warninv", FALSE)) )
 	      { warn("pdi: Invalid packed field"); }
-	   RETVAL = &PL_sv_undef;
+	   RETVAL = &sv_undef;
 	} else {
 	   RETVAL = newSVnv( CFUNC_pdi(packed_str, plen, ndec) );
 	}
@@ -84,17 +84,17 @@ pdo(perlnum, outbytes=8, ndec=0)
 	PROTOTYPE: $;$$
 	PREINIT:
 	double  perlnum_d;
-	char    packed_wk[16];
+	unsigned char    packed_wk[16];
 
 	CODE:
 	if (SvNIOK(perlnum) ) {
 	   perlnum_d = SvNV(perlnum);
 	   CFUNC_pdo(packed_wk, perlnum_d, outbytes, ndec);
-	   RETVAL = newSVpvn(packed_wk, outbytes);
+	   RETVAL = newSVpv((char *)packed_wk, outbytes);
 	} else {
 	   if ( SvTRUE(perl_get_sv("IBM390::warninv", FALSE)) )
 	      { warn("pdo: Input is not a number"); }
-	   RETVAL = &PL_sv_undef;
+	   RETVAL = &sv_undef;
 	}
 
 	OUTPUT:
@@ -124,8 +124,8 @@ fcs_xlate(instring, to_table)
 	New(0, outstring_wk, instring_len, unsigned char);
 	instring_copy = SvPV(instring, pv_string_len);
 	CFUNC_fcs_xlate(outstring_wk, instring_copy, instring_len,
-	  to_table);
-	RETVAL = newSVpvn(outstring_wk, instring_len);
+	  (unsigned char *)to_table);
+	RETVAL = newSVpv(outstring_wk, instring_len);
 	Safefree(outstring_wk);
 
 	OUTPUT:

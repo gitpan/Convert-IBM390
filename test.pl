@@ -46,11 +46,11 @@ was_it_ok(5, (@hdump == 3) && $hdump[0] eq
 #----- pdi
 print "pdi..............";
 my (@pd, @perlnum);
-@pd = (pack("H4", "012C"), pack("H2", "0C"), pack("H6", "00345D"));
+@pd = (pack("H4", "012C"), pack("H2", "0C"), pack("H6", "00789D"));
 @perlnum = (pdi($pd[0]), pdi($pd[1]), pdi($pd[2], 2));
 was_it_ok(6, $perlnum[0] == 12 &&
     $perlnum[1] == 0 &&
-    $perlnum[2] == -3.45);
+    $perlnum[2] == -7.89);
 
 #----- pdi with undefined result
 print "   ..............";

@@ -5,6 +5,10 @@ you may find useful when messing with IBM System/3[679]0 data.  See the
 POD documentation in the module, or "man Convert::IBM390" after you have
 installed it.
 
+asc2eb, eb2asc, eb2ascp:  ASCII/EBCDIC conversion
+pdi, pdo:  packed-decimal conversion
+hexdump:  dump memory in an MVS-like format
+
 How to Install
 ==============
 
@@ -15,12 +19,10 @@ The usual:
     make test
     make install
 
-At the end of "make test", you can expect to see the message "No tests
-defined for Convert::IBM390::IBM390lib extension."  This is normal.
-You may also see a few other error messages.  As far as I can tell,
-these are harmless; they seem to result from my inexperience with
-MakeMaker.  As long as the C code compiles correctly, the module
-should work.
+If your C compiler defaults to signed rather than unsigned char (many
+do), you will see some warnings about type mismatches.  These are
+harmless.  As long as the C code compiles correctly, the module should
+work.
 
 One More Note
 =============

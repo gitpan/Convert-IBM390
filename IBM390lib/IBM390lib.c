@@ -8,7 +8,7 @@
 
 /*---------- Packed Decimal In ----------*/
 double  CFUNC_pdi
-  ( char * packed,
+  ( unsigned char * packed,
     int    plength,
     int    ndec )
 {

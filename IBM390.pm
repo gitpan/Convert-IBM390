@@ -11,7 +11,7 @@ require AutoLoader;
 @ISA = qw(Exporter DynaLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp hexdump pdi pdo fcs_xlate);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 
 # $warninv = issue warning message if a field is invalid.  Default
