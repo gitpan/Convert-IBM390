@@ -7,24 +7,8 @@ $use_xs = (grep { $_ eq 'noxs' } @ARGV) == 0;
 #--- Since many are still using the older releases, we take care of
 #--- it here.  In the near future, this can be removed.
 sub undef_flag {
- my $internal_name = 'sv_undef';
- my $pp_found = 0;
- foreach $dir (@INC) {
-    if (-f "$dir/CORE/pp.h") {
-       $pp_found = 1;
-       open(PP, "$dir/CORE/pp.h") or die "Say what? $!";
-       while (<PP>) {
-          if (/PL_sv_undef/) {
-             $internal_name = 'PL_sv_undef';
-             last;
-          }
-       }
-       close PP;
-       last;
-    }
- }
- $internal_name = 'PL_sv_undef'  unless $pp_found;
- return $internal_name eq 'sv_undef' ? '-DOLD_INTERNAL' : '';
+ if ($] < 5.005) { return '-DOLD_INTERNAL'; }
+ else            { return ''; }
 }
 
 if ($use_xs) {
@@ -57,7 +41,7 @@ close(OUT);
 #--- C code
 
 if ($use_xs) {
-  @c_code = qw(IBM390lib.ccc IBM390lib.hhh packeb.ccc packeb.hhh);
+  @c_code = qw(IBM390lib.ccc IBM390lib.hhh);
   foreach $file (@c_code) {
     ($outfile = $file) =~ s/(ccc|hhh)/substr($1,0,1)/e;
     open(IN, "d/$file") or die "Cannot open d/$infile: $!";
@@ -70,19 +54,16 @@ if ($use_xs) {
 }
 
 #--- WriteMakefile parameters
-$p_libs = '-lm' x $use_xs;
 $p_obj = '$(O_FILES)' x $use_xs;
 
 WriteMakefile(
     'NAME'	=> 'Convert::IBM390',
     'VERSION_FROM' => 'IBM390.pm', # finds $VERSION
-    'LIBS'	=> [$p_libs],
     'OBJECT'    => $p_obj,
     'DEFINE'	=> $p_define,
 #    'DEFINE'	=> "$p_define -DDEBUG390",   # if debugging is desired
     'INC'	=> '',    # e.g., -I/usr/local/lib/.../CORE
-    'clean'	=> { FILES => 'IBM390.pm IBM390lib.c IBM390lib.h '.
-	'packeb.c packeb.h' },
+    'clean'	=> { FILES => 'IBM390.pm IBM390lib.c IBM390lib.h ' },
     'dist'	=> { COMPRESS=>'gzip' },
     @perlonly,
 );

@@ -74,6 +74,8 @@ Revision history for Perl extension Convert::IBM390.
 	  Tony Maa, grab3870@yahoo.com).
 	- Added version function.
 
-0.15X Fri Nov  7 10:38:22 2003
-	- Experimental version to correct bug when building under
-	  Windows.
+0.16  Tue Nov 18 08:44:02 2003
+	- Rewritten to pull the packeb.c code into the XS routine.
+	- Used "unsigned long" rather than "long long" to correct a
+	  bug when building under Windows.
+	- Math library (-lm) is no longer required.

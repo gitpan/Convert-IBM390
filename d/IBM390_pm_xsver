@@ -12,7 +12,7 @@ require AutoLoader;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb
    hexdump fcs_xlate);
-$VERSION = '0.15X';
+$VERSION = '0.16';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -47,21 +47,21 @@ $e2ap_table =
 sub asc2eb {
  my $String = shift;
  return "" if $String eq "";
- return fcs_xlate($String, $a2e_table);
+ return fcs_xlate($String, length($String), $a2e_table);
 }
 
 # EBCDIC to ASCII
 sub eb2asc {
  my $String = shift;
  return "" if $String eq "";
- return fcs_xlate($String, $e2a_table);
+ return fcs_xlate($String, length($String), $e2a_table);
 }
 
 # EBCDIC to ASCII printable
 sub eb2ascp {
  my $String = shift;
  return "" if $String eq "";
- return fcs_xlate($String, $e2ap_table);
+ return fcs_xlate($String, length($String), $e2ap_table);
 }
 
 # Print an entire string in hexdump format, 32 bytes at a time
@@ -104,13 +104,14 @@ sub hexdump {
 # Pack an EBCDIC record
 sub packeb {
  my ($template, @fields) = @_;
- return packeb_XS($template, \@fields, $a2e_table);
+ return ''  if @fields == 0;
+ return packeb_XS($template, $a2e_table, @fields);
 }
 
 # Unpack an EBCDIC record
 sub unpackeb {
  my ($template, $ebrecord) = @_;
- my @unp = unpackeb_XS($template, $ebrecord, $e2a_table);
+ my @unp = unpackeb_XS($template, $e2a_table, $ebrecord);
  return (wantarray) ? @unp : $unp[0];
 }
 
@@ -276,7 +277,8 @@ that the high nybble must always come first in the input.
 
 The maximum length of a packed field is 16 bytes; of a zoned field, 32
 bytes.  All other fields may have a maximum specifier (length or repeat
-count) of 32767.  These maxima are enforced.
+count) of 32767.  The maximum length of the output structure is 36KB.
+These maxima are enforced.
 
 =item B<unpackeb> TEMPLATE RECORD
 
@@ -363,6 +365,32 @@ C<Convert::IBM390::version>.
 
 =back
 
+=head1 A COBOL EXAMPLE
+
+Suppose you have a mainframe record described thus in Cobol:
+
+ 01  ACPDB-RECORD.
+     03  ACPDB-FIRST-DATE-TRANS.
+         05  ACPDB-FD-TRANS-CN   PIC XX.
+         05  ACPDB-FD-TRANS-YR   PIC XX.
+         05  ACPDB-FD-TRANS-MO   PIC XX.
+         05  ACPDB-FD-TRANS-DA   PIC XX.
+     03  ACPDB-LAST-DATE-TRANS.
+         05  ACPDB-LD-TRANS-CN   PIC XX.
+         05  ACPDB-LD-TRANS-YR   PIC XX.
+         05  ACPDB-LD-TRANS-MO   PIC XX.
+         05  ACPDB-LD-TRANS-DA   PIC XX.
+     03  ACPDB-TOTAL-ITEMS       PIC S9(9)       COMP.
+     03  ACPDB-TOTAL-NO-TRANS    PIC S9(5)       COMP-3.
+     03  ACPDB-TOTAL-DOLLARS-1   PIC S9(7)V99    COMP-3.
+     03  ACPDB-PREV-YR-DOLLARS   PIC S9(7)V99    COMP-3.
+     03  ACPDB-RETURNED-ITEMS    PIC S9(4)       COMP.
+     03  ACPDB-DOLL-CD-PREV-BASE PIC XX.
+
+You would unpack the record like this:
+
+  @fields = unpackeb('e8 e8 i p3.0 p5.2 p5.2 s e2', $inrecord)
+
 =head1 REFERENCES
 
 IBM ESA/390 Principles of Operation, SA22-7201.
@@ -380,5 +408,6 @@ None, of course.  What do you think this is -- Unix?
 Convert::IBM390 was written by Geoffrey Rommel
 E<lt>GROMMEL@cpan.orgE<gt>
 in January 1999.
+Thanks to Barry Roomberg for the Cobol example.
 
 =cut

@@ -1,10 +1,16 @@
-#include <math.h>
 #include <stdio.h>
 /*-------------------------------------------------------------------
   Module:  Convert::IBM390
   The C functions defined here are faster than straight Perl code.
 -------------------------------------------------------------------*/
 
+
+ /* Powers of 10 */
+double pow10[32] = { 1.0, 10.0, 100.0, 1000.0, 10000.0,
+  100000.0,    1000000.0,    10000000.0,
+  1.0E8,  1.0E9,  1.0E10, 1.0E11, 1.0E12, 1.0E13, 1.0E14, 1.0E15,
+  1.0E16, 1.0E17, 1.0E18, 1.0E19, 1.0E20, 1.0E21, 1.0E22, 1.0E23,
+  1.0E24, 1.0E25, 1.0E26, 1.0E27, 1.0E28, 1.0E29, 1.0E30, 1.0E31 };
 
 /*---------- Test for a valid packed decimal field ----------*/
 int _valid_packed (
@@ -64,7 +70,7 @@ double  CF_packed2num
   /* If ndec is 0, we're finished; if it's nonzero,
      correct the number of decimal places. */
  if ( ndec != 0 ) {
-    out_num = out_num / pow(10.0, (double) ndec);
+    out_num = out_num / pow10[ndec];
  }
 
 #ifdef DEBUG390
@@ -100,7 +106,7 @@ void  CF_num2packed
  if (ndec == 0) {
     sprintf(digits, "%031.0f", perl_absval);
  } else {
-    sprintf(digits, "%031.0f", perl_absval * pow(10.0, (double) ndec));
+    sprintf(digits, "%031.0f", perl_absval * pow10[ndec]);
  }
  outdigits = outbytes * 2 - 1;
  digit_ptr = digits;
@@ -181,7 +187,7 @@ double  CF_zoned2num
   /* If ndec is 0, we're finished; if it's nonzero,
      correct the number of decimal places. */
  if ( ndec != 0 ) {
-    out_num = out_num / pow(10.0, (double) ndec);
+    out_num = out_num / pow10[ndec];
  }
 
 #ifdef DEBUG390
@@ -216,7 +222,7 @@ void  CF_num2zoned
  if (ndec == 0) {
     sprintf(digits, "%031.0f", perl_absval);
  } else {
-    sprintf(digits, "%031.0f", perl_absval * pow(10.0, (double) ndec));
+    sprintf(digits, "%031.0f", perl_absval * pow10[ndec]);
  }
  digit_ptr = digits;
  out_ptr = zoned_ptr;
@@ -261,4 +267,66 @@ void  CF_fcs_xlate
   fprintf(stderr, "*D* CF_fcs_xlate: returning\n");
 #endif
  return;
+}
+
+
+/*---------- Long integer to System/390 fullword ----------*/
+void _to_S390fw (
+  char * out_word,
+  long   n )
+{
+ long  comp;
+
+ if (n >= 0) {
+    out_word[0] = (char) n / 16777216;
+    out_word[1] = (char) (n / 65536) % 256;
+    out_word[2] = (char) (n / 256) % 256;
+    out_word[3] = (char) n % 256;
+ } else {
+    comp = (-n) - 1;  /* Complement */
+    out_word[0] = (char) comp / 16777216;
+    out_word[1] = (char) (comp / 65536) % 256;
+    out_word[2] = (char) (comp / 256) % 256;
+    out_word[3] = (char) comp % 256;
+     /* Invert all bits. */
+    out_word[0] = out_word[0] ^ 0xFF;
+    out_word[1] = out_word[1] ^ 0xFF;
+    out_word[2] = out_word[2] ^ 0xFF;
+    out_word[3] = out_word[3] ^ 0xFF;
+ }
+ return;
+}
+
+
+/*---------- Long integer to System/390 halfword ----------*/
+void _to_S390hw (
+  char * out_word,
+  long   n )
+{
+ long  comp;
+
+ n = n % 32768;
+ if (n >= 0) {
+    out_word[0] = (char) (n / 256) % 256;
+    out_word[1] = (char) n % 256;
+ } else {
+    comp = (-n) - 1;  /* Complement */
+    out_word[0] = (char) (comp / 256) % 256;
+    out_word[1] = (char) comp % 256;
+     /* Invert all bits. */
+    out_word[0] = out_word[0] ^ 0xFF;
+    out_word[1] = out_word[1] ^ 0xFF;
+ }
+ return;
+}
+
+
+/*---------- _halfword ----------*/
+/* This function returns the value of a Sys/390 halfword (a signed
+   16-bit big-endian integer). */
+int _halfword (
+  char * hw_ptr )
+{
+  return  (((signed char) hw_ptr[0]) << 8)
+        + (unsigned char) hw_ptr[1];
 }

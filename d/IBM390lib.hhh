@@ -9,3 +9,6 @@ int     _valid_zoned ( char *, int );
 double  CF_zoned2num ( char *, int, int );
 void    CF_num2zoned ( char *, double, int, int );
 void    CF_fcs_xlate ( char *, char *, int, char * );
+void    _to_S390fw ( char *, long );
+void    _to_S390hw ( char *, long );
+int     _halfword ( char * );
