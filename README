@@ -26,16 +26,9 @@ For more details, see INSTALL.
 One More Note
 =============
 
-*** IF YOU CAN USE IBM390 RATHER THAN IBM390p, YOU SHOULD. ***
-
-This module is written in a combination of Perl and C.  It should
-compile cleanly in most environments.  If, however, you have trouble
-compiling or installing this module, you can instead use IBM390p,
-which is a Perl-only version of similar functions.  This version is
-to be preferred, however; in my testing, the IBM390 versions of
-packed2num, num2packed, and fcs_xlate ran 5-6 times as fast as the
-pure Perl versions.  Also, packeb() and unpackeb() are available only
-in IBM390.
+This distribution includes both Perl/XS/C and Perl-only versions of the
+module.  See INSTALL for more details on how to figure out which one
+is better for you and how to install it.
 
 
 Geoffrey Rommel
@@ -43,4 +36,4 @@ Technical Consultant
 Sears, Roebuck and Co.
 grommel@sears.com
 
-July 1999
+September 1999

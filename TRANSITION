@@ -1,4 +1,4 @@
-Convert::IBM390 version 0.06
+Convert::IBM390
 
 Version 0.05 was a transitional release.  Older releases included
 separate functions for packed and zoned numeric conversion; this one

@@ -34,3 +34,8 @@ Revision history for Perl extension Convert::IBM390.
 	- Removed separate functions for packed and zoned conversions.
 	- Removed $warninv.
 	- Diverged from IBM390p.
+
+0.07  Tue Sep  7 13:16:47 1999
+	- Merged Perl and Perl/XS versions into one distribution
+	  with identical functions.
+	- Added packeb() and unpackeb() to Perl-only version.
