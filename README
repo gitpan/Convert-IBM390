@@ -9,6 +9,13 @@ asc2eb, eb2asc, eb2ascp:  ASCII/EBCDIC conversion
 packeb, unpackeb:  pack/unpack and convert an EBCDIC record
 hexdump:  dump memory in an MVS-like format
 
+Recent changes:
+
+0.15 - Added 'F' sign for "unsigned" packed numbers.
+0.16 - Rewritten to pull the packeb.c code into the XS routine.
+     - Now builds correctly under Windows.
+0.17 - Added the SMF timestamp data type.
+
 Copyright © 2001 Geoffrey Rommel.  This program is free software;
 you can redistribute it and/or modify it under the same terms as Perl
 itself. 

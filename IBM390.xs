@@ -20,9 +20,9 @@ extern "C" {
 #define OUTSTRING_MEM 36864
  /* Macro: catenate a string to the end of an existing string
   * and move the pointer up. */
-#define memcat(a,b,c,d) \
-	memcpy((a+b), c, d); \
-	b += d;
+#define memcat(target,offset,source,len) \
+	memcpy((target+offset), source, len); \
+	offset += len;
 
 static int
 not_here(s)
@@ -334,6 +334,18 @@ packeb_XS(pat, a2e_table, ...)
 	             }
 	         }
 	         break;
+
+	     /* t: Unix time value to SMF timestamp */
+	     case 't':
+	         for (j = 0; j < len; j++) {
+	            item = ST(ii);
+	            ii++;
+	            along = SvIV(item);
+	            _clock_to_smfstamp(eb_work, along);
+	            memcat(outstring, oi, eb_work, 8);
+	         }
+	         break;
+
 	     default:
 	        croak("Invalid type in packeb: '%c'", datumtype);
 	   }
@@ -362,8 +374,9 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 	char *strend;
 	register char *patend;
 	char datumtype;
-	register I32 len;
+	register I32 len, bits;
 	int i, j, ndec, fieldlen;
+	char hexdigit[16] = "0123456789abcdef";
 
 	/* Work fields */
 	I32 along;
@@ -513,6 +526,28 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 	       }
 	       break;
 
+	   /* [hH]: unpack to printable hex digits.  The length given
+	      in the template is the length of a single field, not
+	      a number of repetitions. */
+	   case 'h':
+	   case 'H':
+	       if (len > (strend - s) * 2)
+	          len = (strend - s) * 2;
+	       if (len < 1)
+	          eb_work[0] = 0x00;  /* Force an empty string. */
+	       i = 0;
+	       along = len;
+	       for (len = 0; len < along; len++) {
+	           if (len & 1)
+	               bits <<= 4;
+	           else
+	               bits = *s++;
+	           eb_work[i++] = hexdigit[(bits >> 4) & 15];
+	       }
+	       eb_work[i] = '\0';
+	       XPUSHs(sv_2mortal(newSVpv(eb_work, len)));
+	       break;
+
 	   /* v: varchar EBCDIC character string; i.e., a string of
 	      EBCDIC characters preceded by a halfword length field (as
 	      in DB2/MVS, for instance).  'len' here is a repeat count,
@@ -577,6 +612,17 @@ unpackeb_XS(pat, eb_xlate_table, ebrecord)
 	          along += (unsigned char) *s;  s++;
 
 	          XPUSHs(sv_2mortal(newSViv(along)));
+	       }
+	       break;
+
+	   /* t: SMF date+time (8 bytes) to Unix time value */
+	   case 't':
+	       if (len > (strend - s) / 8)
+	          len = (strend - s) / 8;
+	       for (i=0; i < len; i++) {
+	          along = _smfstamp_to_clock(s);
+	          XPUSHs(sv_2mortal(newSViv(along)));
+	          s += 8;
 	       }
 	       break;
 

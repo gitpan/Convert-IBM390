@@ -1,3 +1,4 @@
+#include <sys/types.h>
 /*----------------------------------------------------------
   Module:  Convert::IBM390
 ----------------------------------------------------------*/
@@ -12,3 +13,7 @@ void    CF_fcs_xlate ( char *, char *, int, char * );
 void    _to_S390fw ( char *, long );
 void    _to_S390hw ( char *, long );
 int     _halfword ( char * );
+void    _clock_to_smfstamp ( char * , long );
+void    _smftime_unpack ( short *, const char * );
+void    _smfdate_unpack ( short *, const char * );
+time_t  _smfstamp_to_clock ( const char * );

@@ -12,7 +12,7 @@ require AutoLoader;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb
    hexdump fcs_xlate);
-$VERSION = '0.16';
+$VERSION = '0.17';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -220,6 +220,7 @@ options.  The following characters are allowed in the template:
           (sometimes called "unsigned") (default length = 8)
   s  (2)  Signed short integer (S/390 halfword)
   S  (2)  Unsigned short integer (2 bytes)	
+  t  (2)  SMF timestamp (time + date, 8 bytes)
   x  (2)  A null byte
   z  (1)  Zoned-decimal field (default length = 8)
   @       Null-fill to absolute offset
@@ -275,6 +276,14 @@ Either 'h' or 'H' may be used to request hexadecimal conversion.  This
 conversion is exactly the same as in the Perl pack function, except
 that the high nybble must always come first in the input.
 
+Type 't' takes a Unix time value (integer) and produces an SMF
+timestamp (a 4-byte time followed by a 4-byte date).  Since this
+module cannot be aware of the time zone on the target mainframe, the
+time value is treated as if it were UTC (GMT).  You may have to
+adjust the time accordingly; for instance, if your target mainframe
+is running on Eastern time, you will probably want to subtract 
+18000 (= 5 hours * 3600 sec/hr) from the time before packing it.
+
 The maximum length of a packed field is 16 bytes; of a zoned field, 32
 bytes.  All other fields may have a maximum specifier (length or repeat
 count) of 32767.  The maximum length of the output structure is 36KB.
@@ -295,6 +304,7 @@ options.  The following characters are allowed in the template:
   p      (1)   Packed-decimal field
   s      (2)   Signed short integer (S/390 halfword)
   S      (2)   Unsigned short integer (2 bytes)	
+  t      (2)   SMF timestamp (time + date, 8 bytes)
   v      (2)   EBCDIC varchar string
   x      (1)   Ignore these bytes
   z      (1)   Zoned-decimal field
@@ -334,6 +344,15 @@ element of the list will be undefined.
 
 The EBCDIC-to-ASCII translation used by [Eev] is the same as in
 eb2asc().
+
+Type 't' reads an SMF timestamp (a 4-byte time followed by a 4-byte
+date) and produces a Unix time value.  The hundredths of a second
+in the SMF time field are discarded.  Since this
+module cannot be aware of the time zone on the source mainframe, the
+time value is treated as if it were UTC (GMT).  You may have to
+adjust the time accordingly; for instance, if your source mainframe
+is running on Eastern time, you will probably want to add
+18000 (= 5 hours * 3600 sec/hr) to the result after unpacking.
 
 The maximum length of a packed field is 16 bytes; of a zoned field, 32
 bytes.  All other fields may have a maximum specifier (length or repeat
@@ -398,6 +417,9 @@ IBM ESA/390 Principles of Operation, SA22-7201.
 IBM System/370 Principles of Operation, GA22-7000.
 
 IBM C/C++ for MVS/ESA V3R2 Programming Guide, SC09-2164.
+
+z/OS MVS System Management Facilities (SMF), SA22-7630,
+s.v. "Standard SMF Record Header".
 
 =head1 BUGS
 

@@ -1,6 +1,7 @@
 package Convert::IBM390;
 
 use Carp;
+use POSIX qw(mktime);
 use strict;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -10,7 +11,7 @@ require Exporter;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb hexdump
   packed2num num2packed zoned2num num2zoned fcs_xlate);
-$VERSION = '0.16';
+$VERSION = '0.17';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -45,6 +46,12 @@ $e2ap_table =
   '           .<(+|&         !$*); -/         ,%_>?         `:#@\'="'.
   ' abcdefghi       jklmnopqr       ~stuvwxyz   [               ]  '.
   '{ABCDEFGHI      }JKLMNOPQR      \\ STUVWXYZ      0123456789      ';
+
+# Days Before This Month, Leap and Common years
+my @dbtm_com =
+  ( 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 );
+my @dbtm_leap =
+  ( 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 );
 
 # ASCII to EBCDIC
 sub asc2eb {
@@ -203,6 +210,21 @@ sub packeb {
         $result .= pack("H$len", $item);
         last DSWITCH;
      }
+     # t: Unix time to SMF timestamp
+     if (/t/) {
+        for (my $j = 0; $j < $len; $j++) {
+           $item = $inlist[$ii];  $ii++;
+           my @lt = gmtime($item);
+            # SMF time is in centiseconds.
+           my $smftime = ($lt[2] * 360000) + ($lt[1] * 6000) +
+              ($lt[0] * 100);
+           my $smfjdate = ($lt[5] * 1000.0) + ($lt[7] + 1);
+           $result .= pack("N", $smftime);
+           $result .= num2packed($smfjdate, 4, 0, 1);
+        }
+        last DSWITCH;
+     }
+
      Carp::croak("Invalid type in packeb: '$datumtype'");
     }
  }
@@ -310,6 +332,15 @@ sub unpackeb {
         last DSWITCH;
      }
 
+     # [hH]: unpack to printable hex digits
+     if (/[hH]/) {
+        $len = $brem * 2  if $len > $brem * 2;
+        my $bytes = int($len/2);
+        push @rlist, unpack("H$len", substr($ebrecord, $s, $bytes));
+        $s += $bytes;
+        last DSWITCH;
+     }
+
      # v: varchar EBCDIC character string; i.e., a string of
      # EBCDIC characters preceded by a halfword length field (as
      # in DB2/MVS, for instance).  $len here is a repeat count,
@@ -357,6 +388,21 @@ sub unpackeb {
         for (my $i = 0; $i < $len; $i++) {
            push @rlist, unpack('n', substr($ebrecord, $s, 2));
            $s += 2;
+        }
+        last DSWITCH;
+     }
+
+     # t: SMF timestamp to Unix time value
+     if (/t/) {
+        $len = int($brem / 8)  if $len > int($brem / 8);
+        local $ENV{TZ} = "GMT0   ";
+        for (my $i = 0; $i < $len; $i++) {
+           my @hms = _unpack_smftime(substr($ebrecord, $s, 4));
+           my @ymd = _unpack_smfdate(substr($ebrecord, $s+4, 4));
+           my $clock = POSIX::mktime($hms[2], $hms[1], $hms[0],
+              $ymd[2], $ymd[1]-1, $ymd[0]-1900);
+           push @rlist, $clock;
+           $s += 8;
         }
         last DSWITCH;
      }
@@ -502,6 +548,43 @@ sub fcs_xlate {
  return $outstring;
 }
 
+# Unpack an SMF time.
+sub _unpack_smftime {
+ my $smf_time = shift;
+ my ($smft_csec, $hh, $mm, $ss, $csec, $remaining);
+ # The SMF time is in centiseconds (.01 sec).
+ $smft_csec = unpack('N', $smf_time);
+ $hh = int($smft_csec / 360000);
+ $remaining = $smft_csec - ($hh * 360000);
+ $mm = int($remaining / 6000);
+ $remaining = $remaining - ($mm * 6000);
+ $ss = int($remaining / 100);
+ $csec = $remaining - ($ss * 100);
+ return ($hh,$mm,$ss,$csec);
+}
+
+# Unpack an SMF date.
+sub _unpack_smfdate {
+ my $smf_dt = shift;
+ my ($yyyy, $mm, $dd, $jday, $is_common);
+ $smf_dt = packed2num($smf_dt);
+ $yyyy = (int($smf_dt/1000)) + 1900;
+ $jday = $smf_dt % 1000;  # Julian day
+
+ # Is this a common year?
+ $is_common = ($yyyy % 4) || (($yyyy % 100 == 0) && ($yyyy % 400));
+
+ my $dref = ($is_common) ? \@dbtm_com : \@dbtm_leap;
+ for ($mm = 11; $mm >= 0; $mm--) {
+    if ($jday > $dref->[$mm]) {
+       $dd = $jday - $dref->[$mm];
+       $mm++;
+       last;
+    }
+ }
+ return ($yyyy, $mm, $dd);
+}
+
 sub version {
  return "Convert::IBM390 version $VERSION Perl only";
 }
@@ -581,6 +664,7 @@ options.  The following characters are allowed in the template:
           (sometimes called "unsigned") (default length = 8)
   s  (2)  Signed short integer (S/390 halfword)
   S  (2)  Unsigned short integer (2 bytes)	
+  t  (2)  SMF timestamp (time + date, 8 bytes)
   x  (2)  A null byte
   z  (1)  Zoned-decimal field (default length = 8)
   @       Null-fill to absolute offset
@@ -636,6 +720,14 @@ Either 'h' or 'H' may be used to request hexadecimal conversion.  This
 conversion is exactly the same as in the Perl pack function, except
 that the high nybble must always come first in the input.
 
+Type 't' takes a Unix time value (integer) and produces an SMF
+timestamp (a 4-byte time followed by a 4-byte date).  Since this
+module cannot be aware of the time zone on the target mainframe, the
+time value is treated as if it were UTC (GMT).  You may have to
+adjust the time accordingly; for instance, if your target mainframe
+is running on Eastern time, you will probably want to subtract 
+18000 (= 5 hours * 3600 sec/hr) from the time before packing it.
+
 The maximum length of a packed field is 16 bytes; of a zoned field, 32
 bytes.  All other fields may have a maximum specifier (length or repeat
 count) of 32767.  The maximum length of the output structure is 36KB.
@@ -656,6 +748,7 @@ options.  The following characters are allowed in the template:
   p      (1)   Packed-decimal field
   s      (2)   Signed short integer (S/390 halfword)
   S      (2)   Unsigned short integer (2 bytes)	
+  t      (2)   SMF timestamp (time + date, 8 bytes)
   v      (2)   EBCDIC varchar string
   x      (1)   Ignore these bytes
   z      (1)   Zoned-decimal field
@@ -695,6 +788,15 @@ element of the list will be undefined.
 
 The EBCDIC-to-ASCII translation used by [Eev] is the same as in
 eb2asc().
+
+Type 't' reads an SMF timestamp (a 4-byte time followed by a 4-byte
+date) and produces a Unix time value.  The hundredths of a second
+in the SMF time field are discarded.  Since this
+module cannot be aware of the time zone on the source mainframe, the
+time value is treated as if it were UTC (GMT).  You may have to
+adjust the time accordingly; for instance, if your source mainframe
+is running on Eastern time, you will probably want to add
+18000 (= 5 hours * 3600 sec/hr) to the result after unpacking.
 
 The maximum length of a packed field is 16 bytes; of a zoned field, 32
 bytes.  All other fields may have a maximum specifier (length or repeat
@@ -759,6 +861,9 @@ IBM ESA/390 Principles of Operation, SA22-7201.
 IBM System/370 Principles of Operation, GA22-7000.
 
 IBM C/C++ for MVS/ESA V3R2 Programming Guide, SC09-2164.
+
+z/OS MVS System Management Facilities (SMF), SA22-7630,
+s.v. "Standard SMF Record Header".
 
 =head1 BUGS
 
