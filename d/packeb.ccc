@@ -465,7 +465,7 @@ void CF_unpackeb (
            adouble = CF_packed2num(s, len, ndec);
            sv = newSVnv(adouble);
         } else {
-           sv = &sv_undef;
+           sv = &PL_sv_undef;
         }
 
         s += len;
@@ -485,7 +485,7 @@ void CF_unpackeb (
            adouble = CF_zoned2num(s, len, ndec);
            sv = newSVnv(adouble);
         } else {
-           sv = &sv_undef;
+           sv = &PL_sv_undef;
         }
 
         s += len;
@@ -546,7 +546,7 @@ void CF_unpackeb (
             if (fieldlen > strend - s)
                fieldlen = strend - s;
             if (fieldlen < 0) {
-               sv = &sv_undef;
+               sv = &PL_sv_undef;
             } else if (fieldlen == 0) {
                sv = newSVpv("", 0);
             } else {

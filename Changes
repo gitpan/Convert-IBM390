@@ -44,3 +44,7 @@ Revision history for Perl extension Convert::IBM390.
 	- Added a dummy IBM390.pm to the top directory so that CPAN
 	  could find it.  It includes the POD for the use of
 	  search.cpan.org.
+
+0.10  Tue Oct 17 10:29:35 2000
+	- Changed 'sv_undef' to 'PL_sv_undef' to conform with current
+	  perl5 lingo.  Otherwise identical to 0.09.
