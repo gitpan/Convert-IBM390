@@ -1,12 +1,14 @@
+package Convert::IBM390;
+$VERSION = '0.09';
+
 #--- DUMMY ----------------------------------------------------------
 #
-# This is a dummy .pm file, needed only because CPAN expects one in
-# this directory.  To generate the real thing, run 'perl Makefile.PL'.
+# This is a dummy .pm file, needed only because CPAN expects one.
+# To generate the real thing, run 'perl Makefile.PL'.
 #
 #--- DUMMY ----------------------------------------------------------
 
-$VERSION = '0.08';
-
+1;
 __END__
 
 =head1 NAME
