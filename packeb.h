@@ -1,6 +1,6 @@
 /*----------------------------------------------------------
   Module:  Convert::IBM390
-  Functions:  unpackeb, packeb
+  Functions:  packeb, unpackeb
 ----------------------------------------------------------*/
 
 void    CF_packeb ( SV *, char *, AV *, char *, STRLEN * );

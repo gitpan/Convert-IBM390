@@ -1,8 +1,7 @@
 #include <math.h>
 /*-------------------------------------------------------------------
   Module:  Convert::IBM390
-  The C functions defined here correspond to the routines
-  in IBM390.pm, but are faster than straight Perl code.
+  The C functions defined here are faster than straight Perl code.
 -------------------------------------------------------------------*/
 
 

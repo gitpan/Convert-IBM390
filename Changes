@@ -29,3 +29,8 @@ Revision history for Perl extension Convert::IBM390.
 	- Added zoned2num and num2zoned functions.
 	- Added packeb function.
 	- Added zoned support to unpackeb.
+
+0.06  Wed Jul 28 07:45:05 1999
+	- Removed separate functions for packed and zoned conversions.
+	- Removed $warninv.
+	- Diverged from IBM390p.

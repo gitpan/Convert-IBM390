@@ -1,11 +1,10 @@
-#include <math.h>
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
 #include "./IBM390lib.h"
 /*-------------------------------------------------------------------
   Module:  Convert::IBM390
-  Functions:  unpackeb, packeb
+  Functions:  packeb, unpackeb
   These functions are not pure C; they use Perl macros, #defines, etc.
   Some of this code is shamelessly stolen from Perl's built-in
   pack and unpack functions (pp.c).

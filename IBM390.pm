@@ -10,15 +10,11 @@ require AutoLoader;
 
 @ISA = qw(Exporter DynaLoader);
 @EXPORT = qw();
-@EXPORT_OK = qw(asc2eb eb2asc eb2ascp packed2num num2packed hexdump
-   zoned2num num2zoned packeb unpackeb fcs_xlate);
-$VERSION = '0.05';
+@EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb
+   hexdump fcs_xlate);
+$VERSION = '0.06';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
-
-# $warninv = issue warning message if a field is invalid.  Default
-# is FALSE (don't issue the message).  Used by packed2num and num2packed.
-$Convert::IBM390::warninv = 0;
 
 my ($a2e_table, $e2a_table, $e2ap_table);
 $a2e_table = pack "H512",
@@ -157,12 +153,6 @@ Convert::IBM390 -- functions for manipulating mainframe data
   $asc = eb2asc($string);
   $asc = eb2ascp($string);
 
-  $num = packed2num($packed [,ndec]);
-  $packed = num2packed($num [,outbytes [,ndec]]);
-
-  $num = zoned2num($zoned [,ndec]);
-  $zoned = num2zoned($num [,outbytes [,ndec]]);
-
   $ebrecord = packeb($template, LIST...);
   @fields = unpackeb($template, $record);
   @lines = hexdump($string [,startaddr [,charset]]);
@@ -201,87 +191,11 @@ ISO8859-1 (see above).
 
 Like eb2asc, but the output will contain only printable ASCII characters.
 
-=item B<NOTE!!>
-
-The following four functions will be dropped from future releases.
-Use packeb() and unpackeb() instead.
-
-=item B<packed2num> PACKED [NDEC]
-
-Converts an EBCDIC packed number to a Perl number.
-The first argument is the packed field; the second (optional) is a
-number of decimal places to assume (default = 0).  For instance:
-
-  packed2num(x'00123C')    => 123
-  packed2num(x'01235D', 2) => -12.35
-  packed2num(x'0C', 1)     => 0
-
-If the first argument is not a valid packed field, packed2num will
-return the undefined value.  By default, no warning message will be
-issued in this case, but if you set the variable
-$Convert::IBM390::warninv to 1 (or any other true value), a warning
-will be issued.
-
-=item B<num2packed> NUMBER [OUTBYTES [NDEC]]
-
-Converts a Perl number to a packed field.  
-The first argument is a Perl number; the second is the number of bytes
-to put in the output field (default = 8); the third is the number of
-decimal places to round to (default = 0).  For instance:
-
-  num2packed(-234)          => x'000000000000234D'
-  num2packed(-234, 5)       => x'000000234D'
-  num2packed(356.777, 5, 2) => x'000035678C'
-  num2packed(0, 4)          => x'0000000C'
-
-If the first argument is not a valid Perl number, num2packed will return
-the undefined value.  By default, no warning message will be issued
-in this case, but if you set the variable $Convert::IBM390::warninv
-to 1 (or any other true value), a warning will be issued.
-
-=item B<zoned2num> PACKED [NDEC]
-
-Converts an EBCDIC zoned number to a Perl number.  The input may, but
-need not, have an overpunch sign in the last byte.
-The first argument is the zoned field; the second (optional) is a
-number of decimal places to assume (default = 0).  For instance:
-
-  zoned2num('0012C')    => 123
-  zoned2num('0123N', 2) => -12.35
-  zoned2num('0', 1)     => 0
-
-If the first argument is not a valid zoned field, zoned2num will return
-the undefined value.  By default, no warning message will be issued
-in this case, but if you set the variable $Convert::IBM390::warninv
-to 1 (or any other true value), a warning will be issued.
-
-=item B<num2zoned> NUMBER [OUTBYTES [NDEC]]
-
-Converts a Perl number to a zoned field.
-The first argument is a Perl number; the second is the number of bytes
-to put in the output field (default = 8); the third is the number of
-decimal places to round to (default = 0).  For instance:
-
-  num2packed(-234)          => '0000023M'
-  num2packed(-234, 6)       => '00023M'
-  num2packed(356.777, 6, 2) => '03567H'
-  num2packed(0, 4)          => '000{'
-
-The output will always have an overpunch in the last byte for the sign
-(e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L') for -3).  If
-you want unsigned numbers, you can use sprintf() and then translate
-the result: e.g., C<asc2eb(sprintf("%08d", $num))>.
-
-If the first argument is not a valid Perl number, num2packed will return
-the undefined value.  By default, no warning message will be issued
-in this case, but if you set the variable $Convert::IBM390::warninv
-to 1 (or any other true value), a warning will be issued.
-
 =item B<packeb> TEMPLATE LIST
 
 This function is much like Perl's built-in "pack".  It takes a list
 of values and packs it into an EBCDIC record (structure).  If
-called in array context, it will return an array of one element.
+called in list context, it will return a list of one element.
 The TEMPLATE is patterned after Perl's pack template but allows fewer
 options.  The following characters are allowed in the template:
 
@@ -300,20 +214,21 @@ options.  The following characters are allowed in the template:
   z  (1)  Zoned-decimal field (default length = 8)
   @       Null-fill to absolute offset
 
- (1) May be followed by a number giving the length of the output field.
+ (1) May be followed by a number giving the length of the output field;
+     or, for hexadecimal, the number of nybbles in the input.
  (2) May be followed by a number giving the repeat count.
 
 Each character may be followed by a number giving either the length
 of the field or a repeat count, as shown above.  Types 'i', 's', and
 'S' will gobble the specified number of items from the list; if '*' is
 given as the length, all the remaining items will be gobbled.  All
-other types will gobble only one item but will usually require a length
-for the output field.  The following defaults apply:
+other types will gobble only one item; you will usually want to give
+a length for the output field.  The following defaults apply:
 
-  Conversion type           No length given   '*' given
+  Conversion                No length given   '*' given
   Character string [cCeE]   1                 Same length as input
   Hex string [hH]           2                 Same length as input
-  Numeric [pz]              8                 8
+  Decimal [pz]              8                 8
 
 The number must immediately follow the character, but whitespace may
 appear between field specifiers.
@@ -331,8 +246,13 @@ The number of implied decimals may be greater than the number of digits,
 but such a specification will usually cause you to lose part of your
 value; e.g., packing .589 with "p3.6" would yield x'89000c'.
 If the input is not a valid Perl number, the results are unpredictable
-(since they are dependent on internal Perl code), but most likely
-the output field will contain zero.
+(since they depend on internal Perl code), but most likely the output
+field will contain zero.
+
+Zoned output will always have an overpunch in the last byte for the sign
+(e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L') for -3).  If
+you want unsigned numbers, you can use sprintf() and then translate
+the result: e.g., C<asc2eb(sprintf("%08d", $num))>.
 
 The ASCII-to-EBCDIC translation used by [Ee] is the same as in
 asc2eb().
@@ -379,10 +299,12 @@ which is added after the byte count and a '.'.  For instance, "p3.2"
 indicates a 3-byte (5-digit) packed field with 2 implied decimal
 places; if this field contains x'02468C', the result will be 24.68.
 Likewise, "z7.2" indicates a 7-byte (7-digit) zoned field with 2
-implied decimal places; if this field contains '000357R', the result
-will be -35.79.
+implied decimal places; if this field contains '000357R' (in EBCDIC),
+the result will be -35.79.
 The number of implied decimals may be greater than the number of digits;
 e.g., unpacking the packed field above with "p3.6" would yield 0.002468.
+Zoned input fields may, but need not, have an overpunch sign in the
+last byte.
 If the field is not a valid packed or zoned field, the resulting
 element of the list will be undefined.
 
@@ -421,6 +343,18 @@ the character set to use for the printable data at the end of each
 line ("ascii" or "ebcdic", in upper or lower case; default = ascii).
 
 =back
+
+=head1 REFERENCES
+
+IBM ESA/390 Principles of Operation, SA22-7201.
+
+IBM System/370 Principles of Operation, GA22-7000.
+
+IBM C/C++ for MVS/ESA V3R2 Programming Guide, SC09-2164.
+
+=head1 BUGS
+
+None, of course.  What do you think this is -- Unix?
 
 =head1 AUTHOR
 

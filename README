@@ -6,13 +6,12 @@ POD documentation in the module, or "man Convert::IBM390" after you have
 installed it.
 
 asc2eb, eb2asc, eb2ascp:  ASCII/EBCDIC conversion
-packed2num, num2packed:  packed-decimal conversion
-zoned2num, num2zoned:  zoned-decimal conversion
 packeb, unpackeb:  pack/unpack and convert an EBCDIC record
 hexdump:  dump memory in an MVS-like format
 
-*** This is a transitional release.  For more information, see the
-*** file TRANSITION.
+*** This module no longer includes separate functions for packed and
+*** zoned decimal conversion.  For more information, see the file
+*** TRANSITION.
 
 How to Install
 ==============
@@ -32,7 +31,7 @@ One More Note
 This module is written in a combination of Perl and C.  It should
 compile cleanly in most environments.  If, however, you have trouble
 compiling or installing this module, you can instead use IBM390p,
-which is a Perl-only version of the same functions.  This version is
+which is a Perl-only version of similar functions.  This version is
 to be preferred, however; in my testing, the IBM390 versions of
 packed2num, num2packed, and fcs_xlate ran 5-6 times as fast as the
 pure Perl versions.  Also, packeb() and unpackeb() are available only

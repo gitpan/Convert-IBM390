@@ -9,5 +9,5 @@ WriteMakefile(
     'DEFINE'	=> '',
 #    'DEFINE'	=> '-DDEBUG390',    # if debugging is desired
     'INC'	=> '',    # e.g., -I/usr/local/lib/.../CORE
-    'dist'	=> { COMPRESS=>'gzip', SUFFIX=>'gz' },
+    'dist'	=> { COMPRESS=>'gzip' },
 );
