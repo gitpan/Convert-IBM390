@@ -9,27 +9,13 @@ asc2eb, eb2asc, eb2ascp:  ASCII/EBCDIC conversion
 packeb, unpackeb:  pack/unpack and convert an EBCDIC record
 hexdump:  dump memory in an MVS-like format
 
-*** This module no longer includes separate functions for packed and
-*** zoned decimal conversion.  For more information, see the file
-*** TRANSITION.
-
-Copyright (c) 2001 Geoffrey Rommel.  This program is free software;
+Copyright © 2001 Geoffrey Rommel.  This program is free software;
 you can redistribute it and/or modify it under the same terms as Perl
 itself. 
 
 
 How to Install
 ==============
-
-    perl Makefile.PL
-    make
-    make test
-    make install
-
-For more details, see INSTALL.
-
-One More Note
-=============
 
 This distribution includes both Perl/XS/C and Perl-only versions of the
 module.  See INSTALL for more details on how to figure out which one
@@ -39,6 +25,6 @@ is better for you and how to install it.
 Geoffrey Rommel
 Database Administrator
 Webley Systems
-grommel@webley.com
+GROMMEL@cpan.org
 
 September 1999

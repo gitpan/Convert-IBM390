@@ -2,6 +2,11 @@
 #include "perl.h"
 #include "XSUB.h"
 #include "./IBM390lib.h"
+#ifdef OLD_INTERNAL
+   #define UNDEF_PTR &sv_undef
+#else
+   #define UNDEF_PTR &PL_sv_undef
+#endif
 /*-------------------------------------------------------------------
   Module:  Convert::IBM390
   Functions:  packeb, unpackeb
@@ -467,7 +472,7 @@ int CF_unpackeb (
            adouble = CF_packed2num(s, len, ndec);
            sv = newSVnv(adouble);
         } else {
-           sv = &PL_sv_undef;
+           sv = UNDEF_PTR;
         }
 
         s += len;
@@ -488,7 +493,7 @@ int CF_unpackeb (
            adouble = CF_zoned2num(s, len, ndec);
            sv = newSVnv(adouble);
         } else {
-           sv = &PL_sv_undef;
+           sv = UNDEF_PTR;
         }
 
         s += len;
@@ -553,7 +558,7 @@ int CF_unpackeb (
             if (fieldlen > strend - s)
                fieldlen = strend - s;
             if (fieldlen < 0) {
-               sv = &PL_sv_undef;
+               sv = UNDEF_PTR;
             } else if (fieldlen == 0) {
                sv = newSVpv("", 0);
             } else {

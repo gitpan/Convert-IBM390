@@ -10,7 +10,7 @@ require Exporter;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb hexdump
   packed2num num2packed zoned2num num2zoned fcs_xlate);
-$VERSION = '0.12';
+$VERSION = '0.14';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -718,7 +718,7 @@ None, of course.  What do you think this is -- Unix?
 =head1 AUTHOR
 
 Convert::IBM390 was written by Geoffrey Rommel
-E<lt>grommel@webley.comE<gt>
+E<lt>GROMMEL@cpan.orgE<gt>
 in January 1999.
 
 =cut

@@ -2,6 +2,31 @@ use ExtUtils::MakeMaker;
 
 $use_xs = (grep { $_ eq 'noxs' } @ARGV) == 0;
 
+#--- Subroutine to find the internal name of 'undef'.  This is
+#--- sv_undef in older releases, PL_sv_undef in more recent releases.
+#--- Since many are still using the older releases, we take care of
+#--- it here.  In the near future, this can be removed.
+sub undef_flag {
+ my $internal_name = 'sv_undef';
+ my $pp_found = 0;
+ foreach $dir (@INC) {
+    if (-f "$dir/CORE/pp.h") {
+       $pp_found = 1;
+       open(PP, "$dir/CORE/pp.h") or die "Say what? $!";
+       while (<PP>) {
+          if (/PL_sv_undef/) {
+             $internal_name = 'PL_sv_undef';
+             last;
+          }
+       }
+       close PP;
+       last;
+    }
+ }
+ $internal_name = 'PL_sv_undef'  unless $pp_found;
+ return $internal_name eq 'sv_undef' ? '-DOLD_INTERNAL' : '';
+}
+
 if ($use_xs) {
   @perlonly = ();
   print "\n\n","*"x40,"\n";
@@ -41,6 +66,7 @@ if ($use_xs) {
     close(IN);
     close(OUT);
   }
+  $p_define = undef_flag();
 }
 
 #--- WriteMakefile parameters
@@ -52,8 +78,8 @@ WriteMakefile(
     'VERSION_FROM' => 'IBM390.pm', # finds $VERSION
     'LIBS'	=> [$p_libs],
     'OBJECT'    => $p_obj,
-    'DEFINE'	=> '',
-#    'DEFINE'	=> '-DDEBUG390',    # if debugging is desired
+    'DEFINE'	=> $p_define,
+#    'DEFINE'	=> "$p_define -DDEBUG390",   # if debugging is desired
     'INC'	=> '',    # e.g., -I/usr/local/lib/.../CORE
     'clean'	=> { FILES => 'IBM390.pm IBM390lib.c IBM390lib.h '.
 	'packeb.c packeb.h' },

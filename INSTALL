@@ -46,8 +46,8 @@ The Perl-only version ignores this flag, but you can run it with the
 standard Perl debugger (-d) if you wish.
 
 Note the following lines in Makefile.PL:
-       'DEFINE' => '',
-  #    'DEFINE' => '-DDEBUG390',    # if debugging is desired
+      'DEFINE'	=> $p_define,
+  #    'DEFINE'	=> "$p_define -DDEBUG390",   # if debugging is desired
 
 To enable debugging, just comment out the first line (add a '#' to the
 front) and uncomment the second line (delete the first '#').  Then
