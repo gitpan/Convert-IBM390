@@ -11,7 +11,7 @@ require Exporter;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb hexdump
   packed2num num2packed zoned2num num2zoned fcs_xlate);
-$VERSION = '0.19';
+$VERSION = '0.20';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -484,6 +484,8 @@ sub num2packed {
  $outdig = $outwidth * 2 - 1;
 # sprintf will round to the appropriate number of places.
  $digits = sprintf("%0${outdig}.0f", abs($num * (10 ** $ndec)));
+ Carp::croak("Number $num too long for packed decimal")
+    if length($digits) > 31;
  $digits = substr($digits, -$outdig);
  $sign = ($num >= 0) ? (($fsign) ? "F" : "C") : "D";
  $outwidth *= 2;
@@ -522,6 +524,8 @@ sub num2zoned {
  my ($digits, $sign);
 # sprintf will round to the appropriate number of places.
  $digits = sprintf("%0${outwidth}.0f", abs($num * (10 ** $ndec)));
+ Carp::croak("Number $num too long for zoned decimal")
+    if length($digits) > 31;
  $digits = substr($digits, -$outwidth);
  my $last = length($digits) - 1;
  if ($num >= 0) {

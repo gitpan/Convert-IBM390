@@ -3,7 +3,7 @@
 
 ################## We start with some black magic to print on failure.
 
-BEGIN { $| = 1; print "1..11\n"; }
+BEGIN { $| = 1; print "1..13\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Convert::IBM390 qw(:all);
 $loaded = 1;
@@ -97,6 +97,15 @@ print "        .........";
 $ebrecord = pack("H12", "C500FFFEC1C2");
 ($pp, $vv) = unpackeb("p2v", $ebrecord);
 was_it_ok_b(11, !defined($pp) && !defined($vv));
+
+#----- packeb with over-large numbers
+print "packeb crash.....";
+eval { packeb('p16', 1.0e99) };
+was_it_ok_b(12, $@ && $@ =~ /too long/);
+
+print "            .....";
+eval { packeb('z32', 1.0e99) };
+was_it_ok_b(13, $@ && $@ =~ /too long/);
 
 if ($failed == 0) { print "All tests successful.\n"; }
 else {

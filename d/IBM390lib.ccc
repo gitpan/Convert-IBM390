@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 /*-------------------------------------------------------------------
   Module:  Convert::IBM390
@@ -7,8 +8,8 @@
 
 
  /* Powers of 10 */
-double pow10[32] = { 1.0, 10.0, 100.0, 1000.0, 10000.0,
-  100000.0,    1000000.0,    10000000.0,
+static const double pows_of_10[32] = { 1.0, 10.0, 100.0, 1000.0,
+  10000.0,  100000.0,  1000000.0,  10000000.0,
   1.0E8,  1.0E9,  1.0E10, 1.0E11, 1.0E12, 1.0E13, 1.0E14, 1.0E15,
   1.0E16, 1.0E17, 1.0E18, 1.0E19, 1.0E20, 1.0E21, 1.0E22, 1.0E23,
   1.0E24, 1.0E25, 1.0E26, 1.0E27, 1.0E28, 1.0E29, 1.0E30, 1.0E31 };
@@ -71,7 +72,7 @@ double  CF_packed2num
   /* If ndec is 0, we're finished; if it's nonzero,
      correct the number of decimal places. */
  if ( ndec != 0 ) {
-    out_num = out_num / pow10[ndec];
+    out_num = out_num / pows_of_10[ndec];
  }
 
 #ifdef DEBUG390
@@ -82,7 +83,7 @@ double  CF_packed2num
 
 
 /*---------- Perl number to packed decimal ----------*/
-void  CF_num2packed
+int  CF_num2packed
   ( char  *packed_ptr,
     double perlnum,
     int    outbytes,
@@ -103,12 +104,16 @@ void  CF_num2packed
  } else {
     perl_absval = 0 - perlnum;  signum = 0x0D;
  }
-   /* sprintf will round to an "integral" value. */
- if (ndec == 0) {
-    sprintf(digits, "%031.0f", perl_absval);
- } else {
-    sprintf(digits, "%031.0f", perl_absval * pow10[ndec]);
+ if (ndec > 0) {
+    perl_absval *= pows_of_10[ndec];
  }
+   /* Check for an excessively high value. */
+ if (perl_absval >= 1.0E31) {
+    return 0;
+ }
+
+   /* sprintf will round to an "integral" value. */
+ sprintf(digits, "%031.0f", perl_absval);
  outdigits = outbytes * 2 - 1;
  digit_ptr = digits;
  out_ptr = packed_ptr;
@@ -125,7 +130,7 @@ void  CF_num2packed
 #ifdef DEBUG390
   fprintf(stderr, "*D* CF_num2packed: returning\n");
 #endif
- return;
+ return 1;
 }
 
 
@@ -188,7 +193,7 @@ double  CF_zoned2num
   /* If ndec is 0, we're finished; if it's nonzero,
      correct the number of decimal places. */
  if ( ndec != 0 ) {
-    out_num = out_num / pow10[ndec];
+    out_num = out_num / pows_of_10[ndec];
  }
 
 #ifdef DEBUG390
@@ -199,7 +204,7 @@ double  CF_zoned2num
 
 
 /*---------- Perl number to zoned decimal ----------*/
-void  CF_num2zoned
+int  CF_num2zoned
   ( char  *zoned_ptr,
     double perlnum,
     int    outbytes,
@@ -219,12 +224,16 @@ void  CF_num2zoned
  } else {
     perl_absval = 0 - perlnum;  signum = 0xD0;
  }
-   /* sprintf will round to an "integral" value. */
- if (ndec == 0) {
-    sprintf(digits, "%031.0f", perl_absval);
- } else {
-    sprintf(digits, "%031.0f", perl_absval * pow10[ndec]);
+ if (ndec > 0) {
+    perl_absval *= pows_of_10[ndec];
  }
+   /* Check for an excessively high value. */
+ if (perl_absval >= 1.0E31) {
+    return 0;
+ }
+
+   /* sprintf will round to an "integral" value. */
+ sprintf(digits, "%031.0f", perl_absval);
  digit_ptr = digits;
  out_ptr = zoned_ptr;
  for (i = 31 - outbytes; i < 31; i++) {
@@ -239,7 +248,7 @@ void  CF_num2zoned
 #ifdef DEBUG390
   fprintf(stderr, "*D* CF_num2zoned: returning\n");
 #endif
- return;
+ return 1;
 }
 
 

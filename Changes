@@ -94,3 +94,9 @@ Revision history for Perl extension Convert::IBM390.
 0.19  Wed Jul 14 16:39:54 2004
 	- Corrected a bug in unpackeb's integer conversions. Thanks
 	  to Taavo Raykoff for pointing this out.
+
+0.20  Wed Mar  9 08:17:03 2005
+	- Corrected memory leaks in CF_num2packed and CF_num2zoned.
+	  This was pointed out by a few people, but it seemed to appear
+	  only under Linux; anyhow, Chris Madsen came up with a good
+	  solution to the problem.

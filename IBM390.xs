@@ -1,12 +1,6 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
-#ifdef __cplusplus
-}
-#endif
 
 #include "./IBM390lib.h"
 
@@ -24,27 +18,18 @@ extern "C" {
 	memcpy((target+offset), source, len); \
 	offset += len;
 
+
 static int
-not_here(s)
-char *s;
+not_here(char *s)
 {
     croak("%s not implemented on this architecture", s);
     return -1;
 }
 
 static double
-constant(name, arg)
-char *name;
-int arg;
+constant(char *name, int len, int arg)
 {
-    errno = 0;
-    switch (*name) {
-    }
     errno = EINVAL;
-    return 0;
-
-not_there:
-    errno = ENOENT;
     return 0;
 }
 
@@ -156,7 +141,7 @@ packeb(pat, ...)
 	char   datumtype;
 	register char * patend;
 	register int len;
-	int    j, ndec;
+	int    j, ndec, num_ok;
 
 	static char   null10[] = {0,0,0,0,0,0,0,0,0,0};
 	 /* space10 = native spaces.  espace10 = EBCDIC spaces. */
@@ -306,7 +291,12 @@ packeb(pat, ...)
 	         ii++;
 	         adouble = SvNV(item);
 
-	         CF_num2packed(eb_work, adouble, len, ndec, datumtype=='P');
+	         num_ok = CF_num2packed(eb_work, adouble, len, ndec,
+	           datumtype=='P');
+	         if (! num_ok) {
+	            croak("Number %g too long for packed decimal", adouble);
+	         }
+	         item = ST(ii);
 	         memcat(outstring, oi, eb_work, len);
 	         break;
 
@@ -349,7 +339,10 @@ packeb(pat, ...)
 	         ii++;
 	         adouble = SvNV(item);
 
-	         CF_num2zoned(eb_work, adouble, len, ndec);
+	         num_ok = CF_num2zoned(eb_work, adouble, len, ndec);
+	         if (! num_ok) {
+	            croak("Number %g too long for zoned decimal", adouble);
+	         }
 	         memcat(outstring, oi, eb_work, len);
 	         break;
 
@@ -430,7 +423,8 @@ unpackeb(pat, ebrecord)
 	char *strend;
 	register char *patend;
 	char datumtype;
-	register I32 len, bits, outlen;
+	register I32 len, outlen;
+	register I32 bits = 0;
 	int i, j, ndec, fieldlen;
 	char hexdigit[16] = "0123456789abcdef";
 
