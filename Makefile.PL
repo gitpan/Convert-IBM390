@@ -5,7 +5,7 @@ WriteMakefile(
     'NAME'	=> 'Convert::IBM390',
     'VERSION_FROM' => 'IBM390.pm', # finds $VERSION
     'LIBS'	=> ['-lm'],
-    'OBJECT'    => 'IBM390.o IBM390lib.o',
+    'OBJECT'    => '$(O_FILES)',
     'DEFINE'	=> '',
 #    'DEFINE'	=> '-DDEBUG390',    # if debugging is desired
     'INC'	=> '',    # e.g., -I/usr/local/lib/.../CORE

@@ -1,0 +1,32 @@
+Convert::IBM390 version 0.05
+
+This is a transitional release.  The next release WILL NOT include
+separate functions for packed and zoned numeric conversion, unless
+there is a great public outcry.  Here's why.
+
+Three major changes were made in this release: (1) the cryptic names
+"pdi" and "pdo" (borrowed from an old APL workspace written by IBM) were
+changed to "packed2num" and "num2packed" respectively; (2) two new
+functions were added to handle zoned-decimal numbers, namely "zoned2num"
+and "num2zoned"; and (3) the packeb() function was added.
+
+It has occurred to me, however, that packeb and unpackeb can now handle
+all packed and zoned conversions, and more besides.  For instance,
+instead of coding
+    $num = packed2num($packed);
+    $zoned_out = num2zoned($num, 7,2);
+you can now code:
+    $num = unpackeb("p", $packed);
+    $zoned_out = packeb("z7.2", $num);
+Thus, there is really no need for separate numeric conversions.
+
+I am inclined to keep asc2eb, eb2asc, and eb2ascp, since they are
+probably wanted pretty often; but I think the separate packed and zoned
+conversions are unnecessary.  Thus, I intend to drop them from future
+releases unless others demand them.  (And should packeb and unpackeb
+work with $warninv or not?  I'm undecided.)  I welcome your comments by
+e-mail to grommel@sears.com.
+
+
+Geoffrey Rommel
+July 1999

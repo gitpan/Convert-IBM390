@@ -3,10 +3,7 @@
 
 ################## We start with some black magic to print on failure.
 
-# Change 1..1 below to 1..last_test_to_print .
-# (It may become useful if the test is moved to ./t subdirectory.)
-
-BEGIN { $| = 1; print "1..11\n"; }
+BEGIN { $| = 1; print "1..16\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Convert::IBM390 qw(:all);
 $loaded = 1;
@@ -43,32 +40,69 @@ their systems";
 was_it_ok(5, (@hdump == 3) && $hdump[0] eq 
   "000004: 4E6F7720 69732074 68652074 696D6520  666F7220 616C6C20 676F6F64 20506572  *Now is the time for all good Per*\n");
 
-#----- pdi
-print "pdi..............";
+#----- packed2num
+print "packed2num.......";
 my (@pd, @perlnum);
 @pd = (pack("H4", "012C"), pack("H2", "0C"), pack("H6", "00789D"));
-@perlnum = (pdi($pd[0]), pdi($pd[1]), pdi($pd[2], 2));
+@perlnum = (packed2num($pd[0]), packed2num($pd[1]), packed2num($pd[2], 2));
 was_it_ok(6, $perlnum[0] == 12 &&
     $perlnum[1] == 0 &&
     $perlnum[2] == -7.89);
 
-#----- pdi with undefined result
-print "   ..............";
-my $perlnum = pdi(pack("H4", "0D07"));
+#----- packed2num with undefined result
+print "          .......";
+my $perlnum = packed2num(pack("H4", "0D07"));
 was_it_ok(7, ! defined($perlnum));
 
-#----- pdo
-print "pdo..............";
+#----- num2packed
+print "num2packed.......";
 @perlnum = (5.67, 0, -987);
-@pd = (pdo($perlnum[0], 3,2), pdo($perlnum[1],3), pdo($perlnum[2],3));
+@pd = (num2packed($perlnum[0], 3,2), num2packed($perlnum[1],3), num2packed($perlnum[2],3));
 was_it_ok(8, $pd[0] eq "\x00\x56\x7C" &&
     $pd[1] eq "\x00\x00\x0C" &&
     $pd[2] eq "\x00\x98\x7D");
 
-#----- pdo with undefined result
-print "   ..............";
-my $pd = pdo("notanumber");
+#----- num2packed with undefined result
+print "          .......";
+my $pd = num2packed("notanumber");
 was_it_ok(9, ! defined($pd));
+
+#----- zoned2num
+print "zoned2num........";
+@pd = (pack("H8", "F0F1F2C3"), pack("H2", "C0"), pack("H6", "F7F8D9"));
+@perlnum = (zoned2num($pd[0]), zoned2num($pd[1]), zoned2num($pd[2], 2));
+was_it_ok(10, $perlnum[0] == 123 &&
+    $perlnum[1] == 0 &&
+    $perlnum[2] == -7.89);
+
+#----- zoned2num with undefined result
+print "         ........";
+$perlnum = zoned2num(pack("H4", "0D55"));
+was_it_ok(11, ! defined($perlnum));
+
+#----- num2zoned
+print "num2zoned........";
+@perlnum = (5.67, 0, -987);
+@pd = (num2zoned($perlnum[0], 4,2), num2zoned($perlnum[1],3), num2zoned($perlnum[2],3));
+was_it_ok(12, $pd[0] eq "\xF0\xF5\xF6\xC7" &&
+    $pd[1] eq "\xF0\xF0\xC0" &&
+    $pd[2] eq "\xF9\xF8\xD7");
+
+#----- num2zoned with undefined result
+print "         ........";
+$pd = num2zoned("notanumber");
+was_it_ok(13, ! defined($pd));
+
+#----- packeb
+print "packeb...........";
+open(PT, "./packtests")  or die "test.pl: could not open packtests: $!";
+chomp ($ptempl = <PT>);
+chomp ($in = <PT>); @input = split(' ', $in);
+chomp ($hexes = <PT>);
+close PT;
+$expected = pack("H*", $hexes);
+$ebrecord = packeb($ptempl, @input);
+was_it_ok(14, $ebrecord eq $expected);
 
 #----- unpackeb
 print "unpackeb.........";
@@ -77,17 +111,15 @@ chomp ($utempl = <UT>);
 chomp ($hexes = <UT>);
 chomp ($expected = <UT>);
 close UT;
-$hlen = length($hexes);
-$ebrecord = pack("H$hlen", $hexes);
+$ebrecord = pack("H*", $hexes);
 @unp = unpackeb($utempl, $ebrecord);
-was_it_ok(10, "<@unp>" eq "<$expected>");
+was_it_ok(15, "<@unp>" eq "<$expected>");
 
 #----- unpackeb with undefined results
 print "        .........";
 $ebrecord = pack("H12", "C500FFFEC1C2");
 ($pp, $vv) = unpackeb("p2v", $ebrecord);
-was_it_ok(11, !defined($pp) && !defined($vv));
-
+was_it_ok(16, !defined($pp) && !defined($vv));
 
 if ($failed == 0) { print "All tests successful.\n"; }
 else {

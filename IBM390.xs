@@ -38,9 +38,9 @@ not_there:
 MODULE = Convert::IBM390		PACKAGE = Convert::IBM390		
 
 
- # Packed Decimal In -- convert a packed field to a Perl number
+ # Convert a packed field to a Perl number
 SV *
-pdi(packed_num, ndec=0)
+packed2num(packed_num, ndec=0)
 	SV *   packed_num
 	int    ndec
 	PROTOTYPE: $;$
@@ -48,34 +48,33 @@ pdi(packed_num, ndec=0)
 	STRLEN plen;
 	char   packed_str[16];
 	char  *pv_input;
-	int    i, inv_packed;
 
 	CODE:
 #ifdef DEBUG390
-	fprintf(stderr, "*D* pdi: beginning\n");
+	fprintf(stderr, "*D* packed2num: beginning\n");
 #endif
 	pv_input = SvPV(packed_num, plen);
 	memcpy(packed_str, pv_input, (int) plen);
 #ifdef DEBUG390
-	fprintf(stderr, "*D* pdi: memcpy succeeded\n");
+	fprintf(stderr, "*D* packed2num: memcpy succeeded\n");
 #endif
 	if ( _valid_packed(packed_str, plen) ) {
-	   RETVAL = newSVnv( CF_pdi(packed_str, plen, ndec) );
+	   RETVAL = newSVnv( CF_packed2num(packed_str, plen, ndec) );
 	} else {
 	   if ( SvTRUE(perl_get_sv("Convert::IBM390::warninv", FALSE)) )
-	      { warn("pdi: Invalid packed field"); }
+	      { warn("packed2num: Invalid packed field"); }
 	   RETVAL = &sv_undef;
 	}
 #ifdef DEBUG390
-	fprintf(stderr, "*D* pdi: returning\n");
+	fprintf(stderr, "*D* packed2num: returning\n");
 #endif
 
 	OUTPUT:
 	RETVAL
 
- # Packed Decimal Out -- convert a Perl number to a packed field
+ # Convert a Perl number to a packed field
 SV *
-pdo(perlnum, outbytes=8, ndec=0)
+num2packed(perlnum, outbytes=8, ndec=0)
 	SV *    perlnum
 	int     outbytes
 	int     ndec
@@ -86,19 +85,85 @@ pdo(perlnum, outbytes=8, ndec=0)
 
 	CODE:
 #ifdef DEBUG390
-	fprintf(stderr, "*D* pdo: beginning\n");
+	fprintf(stderr, "*D* num2packed: beginning\n");
 #endif
 	if (SvNIOK(perlnum) ) {
 	   perlnum_d = SvNV(perlnum);
-	   CF_pdo(packed_wk, perlnum_d, outbytes, ndec);
+	   CF_num2packed(packed_wk, perlnum_d, outbytes, ndec);
 	   RETVAL = newSVpv(packed_wk, outbytes);
 	} else {
 	   if ( SvTRUE(perl_get_sv("Convert::IBM390::warninv", FALSE)) )
-	      { warn("pdo: Input is not a number"); }
+	      { warn("num2packed: Input is not a number"); }
 	   RETVAL = &sv_undef;
 	}
 #ifdef DEBUG390
-	fprintf(stderr, "*D* pdo: returning\n");
+	fprintf(stderr, "*D* num2packed: returning\n");
+#endif
+
+	OUTPUT:
+	RETVAL
+
+
+ # Convert a zoned field to a Perl number
+SV *
+zoned2num(zoned_num, ndec=0)
+	SV *   zoned_num
+	int    ndec
+	PROTOTYPE: $;$
+	PREINIT:
+	STRLEN zlen;
+	char   zoned_str[32];
+	char  *pv_input;
+
+	CODE:
+#ifdef DEBUG390
+	fprintf(stderr, "*D* zoned2num: beginning\n");
+#endif
+	pv_input = SvPV(zoned_num, zlen);
+	memcpy(zoned_str, pv_input, (int) zlen);
+#ifdef DEBUG390
+	fprintf(stderr, "*D* zoned2num: memcpy succeeded\n");
+#endif
+	if ( _valid_zoned(zoned_str, zlen) ) {
+	   RETVAL = newSVnv( CF_zoned2num(zoned_str, zlen, ndec) );
+	} else {
+	   if ( SvTRUE(perl_get_sv("Convert::IBM390::warninv", FALSE)) )
+	      { warn("zoned2num: Invalid zoned field"); }
+	   RETVAL = &sv_undef;
+	}
+#ifdef DEBUG390
+	fprintf(stderr, "*D* zoned2num: returning\n");
+#endif
+
+	OUTPUT:
+	RETVAL
+
+ # Convert a Perl number to a zoned field
+SV *
+num2zoned(perlnum, outbytes=8, ndec=0)
+	SV *    perlnum
+	int     outbytes
+	int     ndec
+	PROTOTYPE: $;$$
+	PREINIT:
+	double  perlnum_d;
+	char    zoned_wk[32];
+
+	CODE:
+#ifdef DEBUG390
+	fprintf(stderr, "*D* num2zoned: beginning\n");
+#endif
+	if (SvNIOK(perlnum) ) {
+	   perlnum_d = SvNV(perlnum);
+	   CF_num2zoned(zoned_wk, perlnum_d, outbytes, ndec);
+	   RETVAL = newSVpv(zoned_wk, outbytes);
+	} else {
+	   if ( SvTRUE(perl_get_sv("Convert::IBM390::warninv", FALSE)) )
+	      { warn("num2zoned: Input is not a number"); }
+	   RETVAL = &sv_undef;
+	}
+#ifdef DEBUG390
+	fprintf(stderr, "*D* num2zoned: returning\n");
 #endif
 
 	OUTPUT:
@@ -146,14 +211,43 @@ fcs_xlate(instring, to_table)
 	RETVAL
 
 
+ # packeb -- Pack an EBCDIC record
+SV *
+packeb_XS(template, values_ref, a2e_table)
+	char *  template
+	SV *    values_ref
+	char *  a2e_table
+	PROTOTYPE: $$$
+	PREINIT:
+	AV *    values;
+	SV *    outstring;
+	 /* The length will be filled in by the C function. */
+	STRLEN  outstring_len;
+
+	CODE:
+#ifdef DEBUG390
+	fprintf(stderr, "*D* packeb_XS: beginning\n");
+#endif
+	values = (AV *) SvRV(values_ref);
+	outstring = newSVpv("", 0);
+	CF_packeb(outstring, template, values, a2e_table, &outstring_len);
+	RETVAL = outstring;
+#ifdef DEBUG390
+	fprintf(stderr, "*D* packeb_XS: returning\n");
+#endif
+
+	OUTPUT:
+	RETVAL
+
+
  # unpackeb -- Unpack an EBCDIC record
  # Note that the EBCDIC data may contain nulls and other unprintable
  # stuff, so we need an SV*, not just a char*.
 AV *
 unpackeb_XS(template, ebrecord, e2a_table)
-	char *	 template
-	SV *     ebrecord
-	char *   e2a_table
+	char *  template
+	SV *    ebrecord
+	char *  e2a_table
 	PROTOTYPE: $$$
 	PREINIT:
 

@@ -7,5 +7,9 @@ INSTALL
 MANIFEST
 Makefile.PL
 README
+TRANSITION
+packeb.c
+packeb.h
+packtests
 test.pl
 unptests

@@ -10,15 +10,14 @@ require AutoLoader;
 
 @ISA = qw(Exporter DynaLoader);
 @EXPORT = qw();
-@EXPORT_OK = qw(asc2eb eb2asc eb2ascp pdi pdo hexdump
-   unpackeb fcs_xlate);
-$VERSION = '0.04';
+@EXPORT_OK = qw(asc2eb eb2asc eb2ascp packed2num num2packed hexdump
+   zoned2num num2zoned packeb unpackeb fcs_xlate);
+$VERSION = '0.05';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
-
 # $warninv = issue warning message if a field is invalid.  Default
-# is FALSE (don't issue the message).  Used by pdi and pdo.
+# is FALSE (don't issue the message).  Used by packed2num and num2packed.
 $Convert::IBM390::warninv = 0;
 
 my ($a2e_table, $e2a_table, $e2ap_table);
@@ -43,10 +42,10 @@ $e2a_table = pack "H512",
  "5cf7535455565758595ab2d4d6d2d3d530313233343536373839b3dbdcd9da9f";
 
 $e2ap_table =
-  " " x 64 .
-  "           .<(+|&         !\$*); -/         ,%_>?         `:#\@\'=\"".
-  " abcdefghi       jklmnopqr       ~stuvwxyz   [               ]  ".
-  "{ABCDEFGHI      }JKLMNOPQR      \\ STUVWXYZ      0123456789      ";
+  ' ' x 64 .
+  '           .<(+|&         !$*); -/         ,%_>?         `:#@\'="'.
+  ' abcdefghi       jklmnopqr       ~stuvwxyz   [               ]  '.
+  '{ABCDEFGHI      }JKLMNOPQR      \\ STUVWXYZ      0123456789      ';
 
 # ASCII to EBCDIC
 sub asc2eb {
@@ -75,15 +74,17 @@ sub hexdump {
  my ($i, $j, $d, $str, $pri, $hexes);
  my @outlines = ();
  my $L = length($String);
+#   Generate a printable version of the string.
+ my $pri_ex;
+ if ($charset =~ m/ebc/i) {
+    $pri_ex = '$pri = eb2ascp $str;';
+ } else {
+    $pri_ex = '($pri = $str) =~ tr/\\000-\\037\\177-\\377/ /;';
+ }
  for ($i = 0; $i < $L; $i += 32) {
     $str = substr($String, $i,32);
 #   Generate a printable version of the string.
-    if ($charset =~ m/ebc/i) {
-       $pri = eb2ascp $str;
-    } else {
-       $pri = $str;
-       $pri =~ tr/\000-\037\177-\377/ /;
-    }
+    eval $pri_ex;
     $hexes = unpack("H64", $str);
     $hexes =~ tr/a-f/A-F/;
     if (($L - $i) < 32) {   # Pad with blanks if necessary.
@@ -99,6 +100,12 @@ sub hexdump {
     push @outlines, $d;
  }
  return @outlines;
+}
+
+# Pack an EBCDIC record
+sub packeb {
+ my ($template, @fields) = @_;
+ return packeb_XS($template, \@fields, $a2e_table);
 }
 
 # Unpack an EBCDIC record
@@ -150,9 +157,13 @@ Convert::IBM390 -- functions for manipulating mainframe data
   $asc = eb2asc($string);
   $asc = eb2ascp($string);
 
-  $num = pdi($packed [,ndec]);
-  $packed = pdo($num [,outbytes [,ndec]]);
+  $num = packed2num($packed [,ndec]);
+  $packed = num2packed($num [,outbytes [,ndec]]);
 
+  $num = zoned2num($zoned [,ndec]);
+  $zoned = num2zoned($num [,outbytes [,ndec]]);
+
+  $ebrecord = packeb($template, LIST...);
   @fields = unpackeb($template, $record);
   @lines = hexdump($string [,startaddr [,charset]]);
 
@@ -190,37 +201,149 @@ ISO8859-1 (see above).
 
 Like eb2asc, but the output will contain only printable ASCII characters.
 
-=item B<pdi> PACKED [NDEC]
+=item B<NOTE!!>
 
-Packed Decimal In: converts an EBCDIC packed number to a Perl number.
+The following four functions will be dropped from future releases.
+Use packeb() and unpackeb() instead.
+
+=item B<packed2num> PACKED [NDEC]
+
+Converts an EBCDIC packed number to a Perl number.
 The first argument is the packed field; the second (optional) is a
 number of decimal places to assume (default = 0).  For instance:
 
-  pdi(x'00123C')    => 123
-  pdi(x'01235D', 2) => -12.35
-  pdi(x'0C', 1)     => 0
+  packed2num(x'00123C')    => 123
+  packed2num(x'01235D', 2) => -12.35
+  packed2num(x'0C', 1)     => 0
 
-If the first argument is not a valid packed field, pdi will return
-the undefined value.  By default, no warning message will be issued
-in this case, but if you set the variable $Convert::IBM390::warninv
-to 1 (or any other true value), a warning will be issued.
+If the first argument is not a valid packed field, packed2num will
+return the undefined value.  By default, no warning message will be
+issued in this case, but if you set the variable
+$Convert::IBM390::warninv to 1 (or any other true value), a warning
+will be issued.
 
-=item B<pdo> NUMBER [OUTBYTES [NDEC]]
+=item B<num2packed> NUMBER [OUTBYTES [NDEC]]
 
-Packed Decimal Out: converts a Perl number to a packed field.  
+Converts a Perl number to a packed field.  
 The first argument is a Perl number; the second is the number of bytes
 to put in the output field (default = 8); the third is the number of
 decimal places to round to (default = 0).  For instance:
 
-  pdo(-234)          => x'000000000000234D'
-  pdo(-234, 5)       => x'000000234D'
-  pdo(356.777, 5, 2) => x'000035678C'
-  pdo(0, 4)          => x'0000000C'
+  num2packed(-234)          => x'000000000000234D'
+  num2packed(-234, 5)       => x'000000234D'
+  num2packed(356.777, 5, 2) => x'000035678C'
+  num2packed(0, 4)          => x'0000000C'
 
-If the first argument is not a valid Perl number, pdo will return
+If the first argument is not a valid Perl number, num2packed will return
 the undefined value.  By default, no warning message will be issued
 in this case, but if you set the variable $Convert::IBM390::warninv
 to 1 (or any other true value), a warning will be issued.
+
+=item B<zoned2num> PACKED [NDEC]
+
+Converts an EBCDIC zoned number to a Perl number.  The input may, but
+need not, have an overpunch sign in the last byte.
+The first argument is the zoned field; the second (optional) is a
+number of decimal places to assume (default = 0).  For instance:
+
+  zoned2num('0012C')    => 123
+  zoned2num('0123N', 2) => -12.35
+  zoned2num('0', 1)     => 0
+
+If the first argument is not a valid zoned field, zoned2num will return
+the undefined value.  By default, no warning message will be issued
+in this case, but if you set the variable $Convert::IBM390::warninv
+to 1 (or any other true value), a warning will be issued.
+
+=item B<num2zoned> NUMBER [OUTBYTES [NDEC]]
+
+Converts a Perl number to a zoned field.
+The first argument is a Perl number; the second is the number of bytes
+to put in the output field (default = 8); the third is the number of
+decimal places to round to (default = 0).  For instance:
+
+  num2packed(-234)          => '0000023M'
+  num2packed(-234, 6)       => '00023M'
+  num2packed(356.777, 6, 2) => '03567H'
+  num2packed(0, 4)          => '000{'
+
+The output will always have an overpunch in the last byte for the sign
+(e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L') for -3).  If
+you want unsigned numbers, you can use sprintf() and then translate
+the result: e.g., C<asc2eb(sprintf("%08d", $num))>.
+
+If the first argument is not a valid Perl number, num2packed will return
+the undefined value.  By default, no warning message will be issued
+in this case, but if you set the variable $Convert::IBM390::warninv
+to 1 (or any other true value), a warning will be issued.
+
+=item B<packeb> TEMPLATE LIST
+
+This function is much like Perl's built-in "pack".  It takes a list
+of values and packs it into an EBCDIC record (structure).  If
+called in array context, it will return an array of one element.
+The TEMPLATE is patterned after Perl's pack template but allows fewer
+options.  The following characters are allowed in the template:
+
+  c  (1)  Character string without translation, padded with nulls
+  C  (1)  Character string without translation, padded with native
+          spaces
+  e  (1)  ASCII string to be translated into EBCDIC, padded with nulls
+  E  (1)  ASCII string to be translated into EBCDIC, padded with EBCDIC
+          spaces
+  h  (1)  A hexadecimal string, high nybble always first
+  i  (2)  Signed integer (S/390 fullword)
+  p  (1)  Packed-decimal field (default length = 8)
+  s  (2)  Signed short integer (S/390 halfword)
+  S  (2)  Unsigned short integer (2 bytes)	
+  x  (2)  A null byte
+  z  (1)  Zoned-decimal field (default length = 8)
+  @       Null-fill to absolute offset
+
+ (1) May be followed by a number giving the length of the output field.
+ (2) May be followed by a number giving the repeat count.
+
+Each character may be followed by a number giving either the length
+of the field or a repeat count, as shown above.  Types 'i', 's', and
+'S' will gobble the specified number of items from the list; if '*' is
+given as the length, all the remaining items will be gobbled.  All
+other types will gobble only one item but will usually require a length
+for the output field.  The following defaults apply:
+
+  Conversion type           No length given   '*' given
+  Character string [cCeE]   1                 Same length as input
+  Hex string [hH]           2                 Same length as input
+  Numeric [pz]              8                 8
+
+The number must immediately follow the character, but whitespace may
+appear between field specifiers.
+
+The length for packed (p) or zoned (z) fields may include a number
+of decimal places,
+which is added after the byte count and a '.'.  For instance, "p3.2"
+indicates a 3-byte (5-digit) packed field with 2 implied decimal
+places; if the corresponding list element is 24.68, the result will
+be x'02468C'.
+Likewise, "z7.2" indicates a 7-byte (7-digit) zoned field with 2
+implied decimal places; if the input is -35.79, the result will be
+'000357R' in EBCDIC.
+The number of implied decimals may be greater than the number of digits,
+but such a specification will usually cause you to lose part of your
+value; e.g., packing .589 with "p3.6" would yield x'89000c'.
+If the input is not a valid Perl number, the results are unpredictable
+(since they are dependent on internal Perl code), but most likely
+the output field will contain zero.
+
+The ASCII-to-EBCDIC translation used by [Ee] is the same as in
+asc2eb().
+
+Either 'h' or 'H' may be used to request hexadecimal conversion.  This
+conversion is exactly the same as in the Perl pack function, except
+that the high nybble must always come first in the input.
+
+The maximum length of a packed field is 16 bytes; of a zoned field, 32
+bytes.  All other fields may have a maximum specifier (length or repeat
+count) of 32767.  These maxima are enforced.
 
 =item B<unpackeb> TEMPLATE RECORD
 
@@ -239,6 +362,7 @@ options.  The following characters are allowed in the template:
   S      (2)   Unsigned short integer (2 bytes)	
   v      (2)   EBCDIC varchar string
   x      (1)   Ignore these bytes
+  z      (1)   Zoned-decimal field
 
  (1) May be followed by a number giving the length of the field.
  (2) May be followed by a number giving the repeat count.
@@ -249,14 +373,18 @@ to use however many items are left in the string.  The number must
 immediately follow the character, but whitespace may appear between
 field specifiers.
 
-The length for packed (p) fields may include a number of decimal places,
+The length for packed (p) or zoned (z) fields may include a number
+of decimal places,
 which is added after the byte count and a '.'.  For instance, "p3.2"
 indicates a 3-byte (5-digit) packed field with 2 implied decimal
 places; if this field contains x'02468C', the result will be 24.68.
+Likewise, "z7.2" indicates a 7-byte (7-digit) zoned field with 2
+implied decimal places; if this field contains '000357R', the result
+will be -35.79.
 The number of implied decimals may be greater than the number of digits;
-e.g., unpacking the above field with "p3.6" would yield 0.002468.  If
-the field is not a valid packed field, the resulting element of the
-list will be undefined.
+e.g., unpacking the packed field above with "p3.6" would yield 0.002468.
+If the field is not a valid packed or zoned field, the resulting
+element of the list will be undefined.
 
 Varchar (v) fields are assumed to consist of a signed halfword (16-bit)
 integer followed by EBCDIC characters.  If the number appearing in the
@@ -270,9 +398,9 @@ element of the list will be undefined.
 The EBCDIC-to-ASCII translation used by [Eev] is the same as in
 eb2asc().
 
-The maximum length of a packed field is 16 bytes.  All other fields may
-have a maximum specifier (length or repeat count) of 32767.  These
-maxima are enforced.
+The maximum length of a packed field is 16 bytes; of a zoned field, 32
+bytes.  All other fields may have a maximum specifier (length or repeat
+count) of 32767.  These maxima are enforced.
 
 In most cases, you should use 'i' rather than 'I' when unpacking
 fullword integers.  Unsigned long integers are not handled cleanly by
@@ -280,9 +408,9 @@ all systems.
 
 =item B<hexdump> STRING [STARTADDR [CHARSET]]
 
-Generate a hexadecimal dump of STRING.  The dump is similar to a
-SYSABEND dump in MVS: each line contains an address, 32 bytes of
-hexadecimal data, and the same data in printable form.  This function
+Generates a hexadecimal dump of STRING.  The dump is similar to a
+SYSABEND dump in MVS: each line contains an address, 32 bytes of data
+in hexadecimal, and the same data in printable form.  This function
 returns a list of lines, each of which is terminated with a newline.
 This allows them to be printed immediately; for instance, you can say
 "print hexdump($crud);".

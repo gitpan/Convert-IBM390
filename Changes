@@ -22,3 +22,10 @@ Revision history for Perl extension Convert::IBM390.
 	- Further (final?) signed/unsigned improvements.
 	- Added validity checking and 'x' option to unpackeb.
 	- Added debugging option.
+
+0.05  Tue Jul 20 14:43:17 1999
+	- Transitional release.  See file TRANSITION.
+	- pdi and pdo renamed to packed2num and num2packed.
+	- Added zoned2num and num2zoned functions.
+	- Added packeb function.
+	- Added zoned support to unpackeb.
