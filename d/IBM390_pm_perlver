@@ -11,7 +11,7 @@ require Exporter;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb hexdump
   packed2num num2packed zoned2num num2zoned fcs_xlate);
-$VERSION = '0.20';
+$VERSION = '0.21';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -241,11 +241,12 @@ sub unpackeb {
  my @rlist = ();	# Result list
 
  while ($tp < length($template)) {
-# Have we gone past the end of the input?  If so, stop.
-    last if $s >= length($ebrecord);
-
     $datumtype = substr($template, $tp, 1);
     $tp++;
+# Have we gone past the end of the input?  If so, stop, unless they
+# want to reposition within the record.
+    last if $s >= length($ebrecord) && $datumtype ne '@';
+
     next if $datumtype =~ /\s/;
     $ndec = 0;
     if (substr($template, $tp, 1) eq '*') {
@@ -274,6 +275,15 @@ sub unpackeb {
     $_ = $datumtype;
     $brem = length($ebrecord) - $s;  # Bytes REMaining
     DSWITCH: {
+     # @: absolute offset
+     if (/\@/) {
+        if ($len >= length($ebrecord) || $len < 0) {
+           Carp::croak("Absolute position is outside string: \@$len");
+        }
+        $s = $len;
+        last DSWITCH;
+     }
+
      # [Ee]:  EBCDIC character string.  $len is a field length.
      if (/[Ee]/) {
         $len = $brem  if $len > $brem;
@@ -761,6 +771,7 @@ options.  The following characters are allowed in the template:
   v      (2)   EBCDIC varchar string
   x      (1)   Ignore these bytes
   z      (1)   Zoned-decimal field
+  @            Move to an absolute position in the input record
 
  (1) May be followed by a number giving the length of the field.
  (2) May be followed by a number giving the repeat count.

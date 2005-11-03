@@ -1,5 +1,5 @@
 package Convert::IBM390;
-$VERSION = '0.20';
+$VERSION = '0.21';
 
 #--- DUMMY ----------------------------------------------------------
 #
@@ -173,6 +173,7 @@ options.  The following characters are allowed in the template:
   v      (2)   EBCDIC varchar string
   x      (1)   Ignore these bytes
   z      (1)   Zoned-decimal field
+  @            Move to an absolute position in the input record
 
  (1) May be followed by a number giving the length of the field.
  (2) May be followed by a number giving the repeat count.

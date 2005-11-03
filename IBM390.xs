@@ -419,6 +419,7 @@ unpackeb(pat, ebrecord)
 	STRLEN rlen;
 
 	register char *s;
+	char *sbegin;
 	char *tail;
 	char *strend;
 	register char *patend;
@@ -441,7 +442,7 @@ unpackeb(pat, ebrecord)
 #ifdef DEBUG390
 	fprintf(stderr, "*D* unpackeb: beginning\n");
 #endif
-	s = SvPV(ebrecord, rlen);
+	s = sbegin = SvPV(ebrecord, rlen);
 	strend = s + rlen;
 	patend = pat + strlen(pat);
 
@@ -484,6 +485,13 @@ unpackeb(pat, ebrecord)
 	     datumtype, len);
 #endif
 	   switch(datumtype) {
+	   /* @: absolute offset  */
+	   case '@':
+	       if (len >= rlen || len < 0)
+	          croak("Absolute offset is outside string: @%d", len);
+	       s = sbegin + len;
+	       break;
+
 	   /* [eE]: EBCDIC character string.  In this case, the length
 	      given in the template is the length of a single field, not
 	      a number of repetitions. */

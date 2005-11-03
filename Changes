@@ -100,3 +100,7 @@ Revision history for Perl extension Convert::IBM390.
 	  This was pointed out by a few people, but it seemed to appear
 	  only under Linux; anyhow, Chris Madsen came up with a good
 	  solution to the problem.
+
+0.21  Wed Nov  2 13:30:50 2005
+	- Added '@' option to unpackeb at the request of Marc (CPAN
+	  bug 15461).
