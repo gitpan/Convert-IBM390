@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "IBM390lib.h"
 /*-------------------------------------------------------------------
   Module:  Convert::IBM390
   The C functions defined here are faster than straight Perl code.
@@ -14,44 +15,16 @@ static const double pows_of_10[32] = { 1.0, 10.0, 100.0, 1000.0,
   1.0E16, 1.0E17, 1.0E18, 1.0E19, 1.0E20, 1.0E21, 1.0E22, 1.0E23,
   1.0E24, 1.0E25, 1.0E26, 1.0E27, 1.0E28, 1.0E29, 1.0E30, 1.0E31 };
 
-/*---------- Test for a valid packed decimal field ----------*/
-int _valid_packed (
-  const char * packed_str,
-  int    plen )
-{
- int   i;
- unsigned char pdigits;
-
-#ifdef DEBUG390
-  fprintf(stderr, "*D* _valid_packed: beginning\n");
-#endif
- for (i = 0; i < plen; i++) {
-    pdigits = (unsigned char) packed_str[i];
-    if (i < plen - 1) {
-       if (((pdigits & 0xF0) > 0x90) || ((pdigits & 0x0F) > 0x09))
-          { return 0; }
-    } else {
-       if (((pdigits & 0xF0) > 0x90) || ((pdigits & 0x0F) < 0x0A))
-          { return 0; }
-    }
- }
-
-#ifdef DEBUG390
-  fprintf(stderr, "*D* _valid_packed: returning 1\n");
-#endif
- return 1;
-}
-
 
 /*---------- Packed decimal to Perl number ----------*/
 double  CF_packed2num
-  ( char * packed,
+  ( const char * packed,
     int    plength,
     int    ndec )
 {
  double  out_num;
  short   i;
- unsigned char  pdigits, signum;
+ unsigned char  pdigits, zonepart, numpart, signum;
 
 #ifdef DEBUG390
   fprintf(stderr, "*D* CF_packed2num: beginning\n");
@@ -59,11 +32,18 @@ double  CF_packed2num
  out_num = 0.0;
  for (i = 0; i < plength; i++) {
     pdigits = (unsigned char) *(packed + i);
-    out_num = (out_num * 10) + (pdigits >> 4);
-    if (i < plength - 1)
-       out_num = (out_num * 10) + (pdigits & 0x0F);
-    else
-       signum = pdigits & 0x0F;
+    zonepart = pdigits >> 4;
+    numpart = pdigits & 0x0F;
+    if (i < plength - 1) {
+       if ((zonepart > 0x09) || (numpart > 0x09))
+          { return INVALID_390NUM; }
+       out_num = (out_num * 100) + (zonepart * 10) + numpart;
+    } else {
+       if ((zonepart > 0x09) || (numpart < 0x0A))
+          { return INVALID_390NUM; }
+       out_num = (out_num * 10) + zonepart;
+       signum = numpart;
+    }
  }
  if (signum == 0x0D || signum == 0x0B) {
     out_num = -out_num;
@@ -134,38 +114,9 @@ int  CF_num2packed
 }
 
 
-/*---------- Test for a valid zoned decimal field ----------*/
-int _valid_zoned (
-  char * zoned_str,
-  int    plen )
-{
- int   i;
- unsigned char zdigit;
-
-#ifdef DEBUG390
-  fprintf(stderr, "*D* _valid_zoned: beginning\n");
-#endif
- for (i = 0; i < plen; i++) {
-    zdigit = (unsigned char) zoned_str[i];
-    if (i < plen - 1) {
-       if (zdigit < 0xF0 || zdigit > 0xF9)
-          { return 0; }
-    } else {
-       if ((zdigit & 0xF0) < 0xA0 || (zdigit & 0x0F) > 0x09)
-          { return 0; }
-    }
- }
-
-#ifdef DEBUG390
-  fprintf(stderr, "*D* _valid_zoned: returning 1\n");
-#endif
- return 1;
-}
-
-
 /*---------- Zoned decimal to Perl number ----------*/
 double  CF_zoned2num
-  ( char * zoned,
+  ( const char * zoned,
     int    plength,
     int    ndec )
 {
@@ -180,8 +131,12 @@ double  CF_zoned2num
  for (i = 0; i < plength; i++) {
     zdigit = (unsigned char) *(zoned + i);
     if (i < plength - 1) {
+       if (zdigit < 0xF0 || zdigit > 0xF9)
+          { return INVALID_390NUM; }
        out_num = (out_num * 10) + (zdigit - 240);  /* i.e. 0xF0 */
     } else {
+       if ((zdigit & 0xF0) < 0xA0 || (zdigit & 0x0F) > 0x09)
+          { return INVALID_390NUM; }
        out_num = (out_num * 10) + (zdigit & 0x0F);
        signum = zdigit & 0xF0;
     }
@@ -256,7 +211,7 @@ int  CF_num2zoned
  * This function is like tr/// but assumes that the searchstring
  * is a complete 8-bit collating sequence (x'00' - x'FF').
  * The last argument is one of the translation tables defined
- * in IBM390lib.h (a2e_table, etc.).
+ * in IBM390.xs (a2e_table, etc.).
  *-------------------------------------------------------*/
 void  CF_fcs_xlate
   ( char  *outstring,
@@ -324,11 +279,11 @@ void _to_S390hw (
     n = n % 32768;
  }
  if (n >= 0) {
-    out_word[0] = (char) ((n / 256) % 256);
+    out_word[0] = (char) (n / 256);
     out_word[1] = (char) (n % 256);
  } else {
     comp = (-n) - 1;  /* Complement */
-    out_word[0] = (char) ((comp / 256) % 256);
+    out_word[0] = (char) (comp / 256);
     out_word[1] = (char) (comp % 256);
      /* Invert all bits. */
     out_word[0] = out_word[0] ^ 0xFF;
@@ -417,7 +372,7 @@ void _smfdate_unpack (
  short * dbtm_ptr;
 
   /* If this is not a valid packed number, bail. */
- if (! _valid_packed(smf_date, 4)) {
+ if (CF_packed2num(smf_date, 4, 0) == INVALID_390NUM) {
     results[0] = 0;
     return;
  }

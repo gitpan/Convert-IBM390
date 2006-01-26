@@ -1,5 +1,6 @@
 Changes
 IBM390.pm
+IBM390.pod
 IBM390.xs
 INSTALL
 MANIFEST

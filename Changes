@@ -104,3 +104,8 @@ Revision history for Perl extension Convert::IBM390.
 0.21  Wed Nov  2 13:30:50 2005
 	- Added '@' option to unpackeb at the request of Marc (CPAN
 	  bug 15461).
+
+0.22  Thu Jan 26 10:26:30 2006
+	- Updated references for the IBM documents.
+	- Put the POD in a separate .pod file.
+	- Removed _valid_packed and _valid_zoned.
