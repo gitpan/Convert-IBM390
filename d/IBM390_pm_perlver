@@ -11,7 +11,7 @@ require Exporter;
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb hexdump
   packed2num num2packed zoned2num num2zoned fcs_xlate);
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -196,11 +196,11 @@ sub packeb {
         last DSWITCH;
      }
 
-     # z: S/390 zoned decimal.  $len is a field length.
-     if (/z/) {
+     # [zZ]: S/390 zoned decimal.  $len is a field length.
+     if (/[zZ]/) {
         Carp::croak("Field length too large in packeb: z$len") if $len > 32;
         $item = $inlist[$ii];  $ii++;
-        $result .= num2zoned($item, $len, $ndec);
+        $result .= num2zoned($item, $len, $ndec, $datumtype eq 'Z');
         last DSWITCH;
      }
      # [Hh]: hex, high-order nybble always first
@@ -305,7 +305,7 @@ sub unpackeb {
         last DSWITCH;
      }
      # z: S/390 zoned decimal.  $len is a field length.
-     if (/z/) {
+     if (/[zZ]/) {
         $len = $brem  if $len > $brem;
         if ($len > 32) {
            Carp::croak("Field length too large in unpackeb: z$len");
@@ -523,7 +523,7 @@ sub zoned2num {
 
 # Convert a Perl number to a zoned field.
 sub num2zoned {
- my ($num, $outwidth, $ndec) = @_;
+ my ($num, $outwidth, $ndec, $fsign) = @_;
  $outwidth ||= 8;
  $ndec ||= 0;
  if ( $num !~ /^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/ ) {
@@ -538,7 +538,9 @@ sub num2zoned {
     if length($digits) > 31;
  $digits = substr($digits, -$outwidth);
  my $last = length($digits) - 1;
- if ($num >= 0) {
+ if ($num >= 0 && $fsign) {
+    ;
+ } elsif ($num >= 0) {
     substr($digits, $last, 1) =~ tr/0123456789/{ABCDEFGHI/;
  } else {
     substr($digits, $last, 1) =~ tr/0123456789/}JKLMNOPQR/;

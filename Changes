@@ -109,3 +109,7 @@ Revision history for Perl extension Convert::IBM390.
 	- Updated references for the IBM documents.
 	- Put the POD in a separate .pod file.
 	- Removed _valid_packed and _valid_zoned.
+
+0.23  Tue Aug 28 16:53:43 2007
+	- Added 'Z' option for unsigned zoned decimal. Thanks to Craig
+	  Frooninckx for the suggestion.

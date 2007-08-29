@@ -398,14 +398,15 @@ packeb(pat, ...)
 	        in the template is the length of a single field, not a
 	        number of repetitions. */
 	     case 'z':
+	     case 'Z':
 	         if (len > 32) {
-	            croak("Field length too large in packeb: z%d", len);
+	            croak("Field length too large in packeb: %c%d", datumtype, len);
 	         }
 	         item = ST(ii);
 	         ii++;
 	         adouble = SvNV(item);
 
-	         num_ok = CF_num2zoned(eb_work, adouble, len, ndec);
+	         num_ok = CF_num2zoned(eb_work, adouble, len, ndec, datumtype=='Z');
 	         if (! num_ok) {
 	            croak("Number %g too long for zoned decimal", adouble);
 	         }
@@ -604,6 +605,7 @@ unpackeb(pat, ebrecord)
 	      in the template is the length of a single field, not a
 	      number of repetitions. */
 	   case 'z':
+	   case 'Z':
 	       if (len > strend - s)
 	          len = strend - s;
 	       if (len > 32) {

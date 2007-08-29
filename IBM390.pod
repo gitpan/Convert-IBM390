@@ -17,13 +17,13 @@ Convert::IBM390 -- functions for manipulating mainframe data
 =head1 DESCRIPTION
 
 B<Convert::IBM390> supplies various functions that you may find useful
-when messing with IBM System/3[679]0 data.  No functions are exported
+when working with IBM System/3[679]0 data.  No functions are exported
 automatically; you must ask for the ones you want.  "use ... qw(:all)"
 exports all functions.
 
-By the way, this module is called "IBM390" because it will deal with
-data from any mainframe operating system.  Nothing about it is
-specific to z/OS, z/VM, or z/VSE.
+This module is called "IBM390" because it will deal with data from any 
+mainframe operating system.  Nothing about it is specific to z/OS, 
+z/VM, or z/VSE.
 
 =head1 FUNCTIONS
 
@@ -71,10 +71,11 @@ options.  The following characters are allowed in the template:
   t  (2)  SMF timestamp (time + date, 8 bytes)
   x  (2)  A null byte
   z  (1)  Zoned-decimal field (default length = 8)
+  Z  (1)  Unsigned zoned-decimal field (default length = 8)
   @       Null-fill to absolute offset
 
  (1) May be followed by a number giving the length of the output field;
-     or, for hexadecimal, the number of nybbles in the input.
+     or, for hexadecimal, the number of nibbles in the input.
  (2) May be followed by a number giving the repeat count.
 
 Each character may be followed by a number giving either the length
@@ -112,10 +113,9 @@ field will contain zero.
 C for positive, D for negative. 'P' will produce F for positive
 (sometimes called "unsigned") and D for negative.
 
-Zoned output will always have an overpunch in the last byte for the sign
-(e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L') for -3).  If
-you want unsigned numbers, you can use sprintf() and then translate
-the result: e.g., C<asc2eb(sprintf("%08d", $num))>.
+Signed zoned output (z) will always have an overpunch in the last byte
+for the sign (e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L')
+for -3). Unsigned zoned output (Z) will have no overpunch.
 
 The ASCII-to-EBCDIC translation used by [Ee] is the same as in
 asc2eb().
@@ -158,7 +158,7 @@ options.  The following characters are allowed in the template:
   t      (2)   SMF timestamp (time + date, 8 bytes)
   v      (2)   EBCDIC varchar string
   x      (1)   Ignore these bytes
-  z      (1)   Zoned-decimal field
+  z or Z (1)   Zoned-decimal field (signed or unsigned)
   @            Move to an absolute position in the input record
 
  (1) May be followed by a number giving the length of the field.

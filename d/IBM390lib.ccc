@@ -163,7 +163,8 @@ int  CF_num2zoned
   ( char  *zoned_ptr,
     double perlnum,
     int    outbytes,
-    int    ndec )
+    int    ndec,
+    int    fsign )
 {
  int     i;
  double  perl_absval;
@@ -175,7 +176,7 @@ int  CF_num2zoned
   fprintf(stderr, "*D* CF_num2zoned: beginning\n");
 #endif
  if (perlnum >= 0) {
-    perl_absval = perlnum;   signum = 0xC0;
+    perl_absval = perlnum;      signum = (fsign) ? 0xF0 : 0xC0;
  } else {
     perl_absval = 0 - perlnum;  signum = 0xD0;
  }
