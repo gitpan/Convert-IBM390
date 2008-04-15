@@ -4,7 +4,7 @@
 ----------------------------------------------------------*/
 
  /* This value is used to flag an invalid packed or zoned field.
-    It should work as long as those fields can't be more than 31
+    It should work as long as those fields can't exceed 31
     digits. */
 #define INVALID_390NUM  -5.5E50
 

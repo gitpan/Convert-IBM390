@@ -12,6 +12,8 @@ print "ok 1\n";
 ################## End of black magic.
 
 $VERBOSE = $ENV{TEST_VERBOSE};
+print "version is ",Convert::IBM390::version(),"\n";
+print Convert::IBM390::hexdump("What hath God wrought?");
 
 my $failed = 0;
 #----- asc2eb
@@ -21,9 +23,9 @@ $asc = '';
 $eb = asc2eb($asc);
 was_it_ok(2, $eb , '');
 print "      ...........";
-$asc = ".<(+|!\$*%\@=[]A2";
+$asc = ".<(+|!\$*%\@=[]A2\x00";
 $eb = asc2eb($asc);
-was_it_ok(3, $eb, "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2");
+was_it_ok(3, $eb, "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2\x00");
 
 #----- eb2asc
 print "eb2asc...........";
@@ -31,9 +33,9 @@ $eb = "";
 $asc = eb2asc($eb);
 was_it_ok(4, $asc, "");
 print "      ...........";
-$eb = "KLMNOZ[\\l|~\xAD\xBD\xC1\xF2";
+$eb = "KLMNOZ[\\l|~\xAD\xBD\xC1\x00\xF2";
 $asc = eb2asc($eb);
-was_it_ok(5, $asc, ".<(+|!\$*%\@=[]A2");
+was_it_ok(5, $asc, ".<(+|!\$*%\@=[]A\x002");
 
 #----- eb2ascp
 print "eb2ascp..........";

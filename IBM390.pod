@@ -11,7 +11,7 @@ Convert::IBM390 -- functions for manipulating mainframe data
   $asc = eb2ascp($string);
 
   $ebrecord = packeb($template, LIST...);
-  @fields = unpackeb($template, $record);
+  @fields = unpackeb($template, $ebrecord);
   @lines = hexdump($string [,startaddr [,charset]]);
 
 =head1 DESCRIPTION
@@ -22,8 +22,14 @@ automatically; you must ask for the ones you want.  "use ... qw(:all)"
 exports all functions.
 
 This module is called "IBM390" because it will deal with data from any 
-mainframe operating system.  Nothing about it is specific to z/OS, 
-z/VM, or z/VSE.
+mainframe or iSeries operating system.  Nothing about it is specific
+to z/OS, or z/VM, z/VSE, i5/OS, z/TPF....
+
+When transmitting EBCDIC data to your Perl environment via FTP, be
+sure to use the "binary" option. This will leave the data unconverted
+so that the module recognizes it. By default, FTP will translate
+the data to ASCII; this will convert the character fields
+correctly but garble other formats, such as packed-decimal and binary.
 
 =head1 FUNCTIONS
 
@@ -61,7 +67,7 @@ options.  The following characters are allowed in the template:
   e  (1)  ASCII string to be translated into EBCDIC, padded with nulls
   E  (1)  ASCII string to be translated into EBCDIC, padded with EBCDIC
           spaces
-  h  (1)  A hexadecimal string, high nybble always first
+  h  (1)  A hexadecimal string, high nibble always first
   i  (2)  Signed integer (S/390 fullword)
   p  (1)  Packed-decimal field (default length = 8)
   P  (1)  Packed-decimal field with F signs for positive numbers
@@ -114,15 +120,15 @@ C for positive, D for negative. 'P' will produce F for positive
 (sometimes called "unsigned") and D for negative.
 
 Signed zoned output (z) will always have an overpunch in the last byte
-for the sign (e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L')
-for -3). Unsigned zoned output (Z) will have no overpunch.
+for the sign: e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L')
+for -3. Unsigned zoned output (Z) will have no overpunch.
 
 The ASCII-to-EBCDIC translation used by [Ee] is the same as in
 asc2eb().
 
 Either 'h' or 'H' may be used to request hexadecimal conversion.  This
 conversion is exactly the same as in the Perl pack function, except
-that the high nybble must always come first in the input.
+that the high nibble must always come first in the input.
 
 Type 't' takes a Unix time value (integer) and produces an SMF
 timestamp (a 4-byte time followed by a 4-byte date).  Since this
@@ -281,7 +287,7 @@ None, of course.  What do you think this is -- Unix?
 =head1 AUTHOR
 
 Convert::IBM390 was written by Geoffrey Rommel
-E<lt>GROMMEL@cpan.orgE<gt>
+E<lt>GROMMEL (at) cpan (dot) orgE<gt>
 in January 1999.
 Thanks to Barry Roomberg for the Cobol example.
 
