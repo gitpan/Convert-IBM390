@@ -114,5 +114,8 @@ Revision history for Perl extension Convert::IBM390.
 	- Added 'Z' option for unsigned zoned decimal. Thanks to Craig
 	  Frooninckx for the suggestion.
 
-0.24  x
+0.24  Apr 15 2008
 	- Minor corrections to POD.
+
+0.25  Mon Jul  7 16:52:59 2008
+	- Use setenv() rather than putenv() for Linux.

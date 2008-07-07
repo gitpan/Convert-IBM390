@@ -13,7 +13,6 @@ print "ok 1\n";
 
 $VERBOSE = $ENV{TEST_VERBOSE};
 print "version is ",Convert::IBM390::version(),"\n";
-print Convert::IBM390::hexdump("What hath God wrought?");
 
 my $failed = 0;
 #----- asc2eb

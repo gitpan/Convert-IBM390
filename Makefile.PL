@@ -1,4 +1,5 @@
 use ExtUtils::MakeMaker;
+use Config qw(config_re);
 
 $use_xs = (grep { $_ eq 'noxs' } @ARGV) == 0;
 
@@ -38,6 +39,16 @@ while(<IN>) {
 close(IN);
 close(OUT);
 
+#--- Linux has putenv, but it causes a memory leak, so setenv is
+#--- better. Many systems, however, don't have setenv (e.g. AIX), so
+#--- we have to define this variable ... ugh.
+$os = (config_re('osname'))[0];
+if ($os =~ /linux|cygwin/i) {
+   $p_define = '-DHAVE_SETENV';
+} else {
+   $p_define = '';
+}
+
 #--- C code
 
 if ($use_xs) {
@@ -50,7 +61,7 @@ if ($use_xs) {
     close(IN);
     close(OUT);
   }
-  $p_define = undef_flag();
+  $p_define .= undef_flag();
 }
 
 #--- WriteMakefile parameters

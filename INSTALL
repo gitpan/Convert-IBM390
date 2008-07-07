@@ -58,5 +58,19 @@ Be sure to rebuild *WITHOUT* debugging before installing the module for
 general use.
 
 
+putenv Strikes Again
+====================
+
+If the OS issues an error message after running "make test", even
+if all tests were successful, the problem is probably a memory leak
+in putenv(). This problem was reported under Linux (Debian), so 
+Makefile.PL now tests for Linux and builds the module with setenv()
+instead. If you encounter the same symptom, please (1) report it
+to GROMMEL [at] cpan [dot] org and (2) add your OS name to the
+following line in Makefile.PL:
+
+   if ($os =~ /linux|cygwin|your-os-here/i) {
+
+
 Geoffrey Rommel
 August 1999
