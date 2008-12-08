@@ -119,3 +119,10 @@ Revision history for Perl extension Convert::IBM390.
 
 0.25  Mon Jul  7 16:52:59 2008
 	- Use setenv() rather than putenv() for Linux.
+
+0.26  Mon Dec  8 17:18:29 2008
+	- Allow user-specified translation tables
+	- Perl-only unpackeb 'E' not stripping nulls
+	- XS packeb might read unallocated memory
+	- Above changes made by Chris Madsen.
+	- Removed the little-used SMF timestamp option.

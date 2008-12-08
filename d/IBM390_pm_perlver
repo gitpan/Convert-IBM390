@@ -10,8 +10,9 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb hexdump
-  packed2num num2packed zoned2num num2zoned fcs_xlate);
-$VERSION = '0.25';
+  packed2num num2packed zoned2num num2zoned fcs_xlate
+  set_codepage set_translation);
+$VERSION = '0.26';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -95,7 +96,7 @@ sub packeb {
     next if $datumtype =~ /\s/;
     if (substr($template, $tp, 1) eq '*') {
        $star = '*';
-       $len = ($datumtype =~ /[pz]/) ? 8 : 
+       $len = ($datumtype =~ /[pz]/) ? 8 :
          ($datumtype =~ /[x\@]/) ? 0 : @inlist - $ii;
        $tp++;
     } elsif (substr($template, $tp, 1) =~ /\d/) {
@@ -210,20 +211,6 @@ sub packeb {
         $result .= pack("H$len", $item);
         last DSWITCH;
      }
-     # t: Unix time to SMF timestamp
-     if (/t/) {
-        for (my $j = 0; $j < $len; $j++) {
-           $item = $inlist[$ii];  $ii++;
-           my @lt = gmtime($item);
-            # SMF time is in centiseconds.
-           my $smftime = ($lt[2] * 360000) + ($lt[1] * 6000) +
-              ($lt[0] * 100);
-           my $smfjdate = ($lt[5] * 1000.0) + ($lt[7] + 1);
-           $result .= pack("N", $smftime);
-           $result .= num2packed($smfjdate, 4, 0, 1);
-        }
-        last DSWITCH;
-     }
 
      Carp::croak("Invalid type in packeb: '$datumtype'");
     }
@@ -288,7 +275,7 @@ sub unpackeb {
      if (/[Ee]/) {
         $len = $brem  if $len > $brem;
         $a = eb2asc(substr($ebrecord, $s, $len));
-        $a =~ s/\s+$//  if $datumtype eq 'E';
+        $a =~ s/[\0 ]+$//  if $datumtype eq 'E';
         push @rlist, $a;
         $s += $len;
         last DSWITCH;
@@ -305,7 +292,7 @@ sub unpackeb {
         last DSWITCH;
      }
      # z: S/390 zoned decimal.  $len is a field length.
-     if (/[zZ]/) {
+     if (/z/) {
         $len = $brem  if $len > $brem;
         if ($len > 32) {
            Carp::croak("Field length too large in unpackeb: z$len");
@@ -404,20 +391,6 @@ sub unpackeb {
         last DSWITCH;
      }
 
-     # t: SMF timestamp to Unix time value
-     if (/t/) {
-        $len = int($brem / 8)  if $len > int($brem / 8);
-        local $ENV{TZ} = "GMT0   ";
-        for (my $i = 0; $i < $len; $i++) {
-           my @hms = _unpack_smftime(substr($ebrecord, $s, 4));
-           my @ymd = _unpack_smfdate(substr($ebrecord, $s+4, 4));
-           my $clock = POSIX::mktime($hms[2], $hms[1], $hms[0],
-              $ymd[2], $ymd[1]-1, $ymd[0]-1900);
-           push @rlist, $clock;
-           $s += 8;
-        }
-        last DSWITCH;
-     }
      Carp::croak("Invalid type in unpackeb: '$datumtype'");
     }
  }
@@ -522,8 +495,9 @@ sub zoned2num {
 }
 
 # Convert a Perl number to a zoned field.
+# Last arg: use F instead of C for positives?
 sub num2zoned {
- my ($num, $outwidth, $ndec, $fsign) = @_;
+ my ($num, $outwidth, $ndec, $unsigned) = @_;
  $outwidth ||= 8;
  $ndec ||= 0;
  if ( $num !~ /^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/ ) {
@@ -538,12 +512,12 @@ sub num2zoned {
     if length($digits) > 31;
  $digits = substr($digits, -$outwidth);
  my $last = length($digits) - 1;
- if ($num >= 0 && $fsign) {
-    ;
- } elsif ($num >= 0) {
-    substr($digits, $last, 1) =~ tr/0123456789/{ABCDEFGHI/;
- } else {
-    substr($digits, $last, 1) =~ tr/0123456789/}JKLMNOPQR/;
+ unless ($unsigned) {
+    if ($num >= 0) {
+       substr($digits, $last, 1) =~ tr/0123456789/{ABCDEFGHI/;
+    } else {
+       substr($digits, $last, 1) =~ tr/0123456789/}JKLMNOPQR/;
+    }
  }
  return asc2eb($digits);
 }
@@ -566,47 +540,11 @@ sub fcs_xlate {
  return $outstring;
 }
 
-# Unpack an SMF time.
-sub _unpack_smftime {
- my $smf_time = shift;
- my ($smft_csec, $hh, $mm, $ss, $csec, $remaining);
- # The SMF time is in centiseconds (.01 sec).
- $smft_csec = unpack('N', $smf_time);
- $hh = int($smft_csec / 360000);
- $remaining = $smft_csec - ($hh * 360000);
- $mm = int($remaining / 6000);
- $remaining = $remaining - ($mm * 6000);
- $ss = int($remaining / 100);
- $csec = $remaining - ($ss * 100);
- return ($hh,$mm,$ss,$csec);
-}
-
-# Unpack an SMF date.
-sub _unpack_smfdate {
- my $smf_dt = shift;
- my ($yyyy, $mm, $dd, $jday, $is_common);
- $smf_dt = packed2num($smf_dt);
- $yyyy = (int($smf_dt/1000)) + 1900;
- $jday = $smf_dt % 1000;  # Julian day
-
- # Is this a common year?
- $is_common = ($yyyy % 4) || (($yyyy % 100 == 0) && ($yyyy % 400));
-
- my $dref = ($is_common) ? \@dbtm_com : \@dbtm_leap;
- for ($mm = 11; $mm >= 0; $mm--) {
-    if ($jday > $dref->[$mm]) {
-       $dd = $jday - $dref->[$mm];
-       $mm++;
-       last;
-    }
- }
- return ($yyyy, $mm, $dd);
+sub _set_translation {
+  die "Invalid tables" if @_ != 3 or grep { length($_) != 256 } @_;
+  ($a2e_table, $e2a_table, $e2ap_table) = @_;
 }
 
 sub version {
  return "Convert::IBM390 version $VERSION Perl only";
 }
-
-1;
-
-__END__

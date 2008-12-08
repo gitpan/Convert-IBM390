@@ -11,13 +11,14 @@ hexdump:  dump memory in an MVS-like format
 
 Recent changes:
 
+0.18 - Performance improvements to the XS version.
+0.19 - Fixed a bug in unpackeb.
+0.20 - Fixed memory leaks in CF_num2packed and CF_num2zoned.
+0.21 - Added '@' option to unpackeb.
 0.22 - Simplified packed-to-numeric conversions; some documentation
        changes.
-0.23 - Added 'Z' option for unsigned zoned decimals.
-0.24 - Minor changes to POD.
-0.25 - Fixed putenv() memory leak under Linux.
 
-Copyright © 2008 Geoffrey Rommel.  This program is free software;
+Copyright © 2001 Geoffrey Rommel.  This program is free software;
 you can redistribute it and/or modify it under the same terms as Perl
 itself. 
 
@@ -31,6 +32,7 @@ and how to install it.
 
 
 Geoffrey Rommel
-GROMMEL (at) cpan (dot) org
+Nazareth Consulting, Inc.
+GROMMEL@cpan.org
 
 September 1999

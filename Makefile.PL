@@ -32,22 +32,20 @@ if ($use_xs) {
 }
 
 open(IN, "d/$infile") or die "Cannot open d/$infile: $!";
-open(OUT,">$outfile") or die "Cannot open $outfile: $!";
+open(OUT,">lib/Convert/$outfile") or die "Cannot open $outfile: $!";
+while(<IN>) {
+   print OUT;
+}
+close(IN);
+
+open(IN, "d/IBM390_pm_common") or die "Cannot open d/IBM390_pm_common: $!";
 while(<IN>) {
    print OUT;
 }
 close(IN);
 close(OUT);
 
-#--- Linux has putenv, but it causes a memory leak, so setenv is
-#--- better. Many systems, however, don't have setenv (e.g. AIX), so
-#--- we have to define this variable ... ugh.
-$os = (config_re('osname'))[0];
-if ($os =~ /linux|cygwin/i) {
-   $p_define = '-DHAVE_SETENV';
-} else {
-   $p_define = '';
-}
+$p_define = '';
 
 #--- C code
 
@@ -69,12 +67,12 @@ $p_obj = '$(O_FILES)' x $use_xs;
 
 WriteMakefile(
     'NAME'	=> 'Convert::IBM390',
-    'VERSION_FROM' => 'IBM390.pm', # finds $VERSION
+    'VERSION_FROM' => 'lib/Convert/IBM390.pm', # finds $VERSION
     'OBJECT'    => $p_obj,
     'DEFINE'	=> $p_define,
 #    'DEFINE'	=> "$p_define -DDEBUG390",   # if debugging is desired
     'INC'	=> '',    # e.g., -I/usr/local/lib/.../CORE
-    'clean'	=> { FILES => 'IBM390.pm IBM390lib.c IBM390lib.h ' },
-    'dist'	=> { PREOP => 'cp -p d/IBM390_pm_dummy IBM390.pm' },
+    'clean'	=> { FILES => 'lib/Convert/IBM390.pm IBM390lib.c IBM390lib.h ' },
+    'dist'	=> { PREOP => 'cp -p "d/IBM390_pm_dummy" "lib/Convert/IBM390.pm"' },
     @perlonly,
 );

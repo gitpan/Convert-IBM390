@@ -6,12 +6,14 @@ Convert::IBM390 -- functions for manipulating mainframe data
 
   use Convert::IBM390 qw(...those desired... or :all);
 
+  set_codepage('CP00037');  # equivalent to "use Convert::IBM390::CP00037;"
+
   $eb  = asc2eb($string);
   $asc = eb2asc($string);
   $asc = eb2ascp($string);
 
   $ebrecord = packeb($template, LIST...);
-  @fields = unpackeb($template, $ebrecord);
+  @fields = unpackeb($template, $ebcdic_record);
   @lines = hexdump($string [,startaddr [,charset]]);
 
 =head1 DESCRIPTION
@@ -21,9 +23,9 @@ when working with IBM System/3[679]0 data.  No functions are exported
 automatically; you must ask for the ones you want.  "use ... qw(:all)"
 exports all functions.
 
-This module is called "IBM390" because it will deal with data from any 
-mainframe or iSeries operating system.  Nothing about it is specific
-to z/OS, or z/VM, z/VSE, i5/OS, z/TPF....
+By the way, this module is called "IBM390" because it will deal with
+data from any mainframe operating system.  Nothing about it is
+specific to z/OS, or z/VM, z/VSE, i5/OS, z/TPF....
 
 When transmitting EBCDIC data to your Perl environment via FTP, be
 sure to use the "binary" option. This will leave the data unconverted
@@ -73,8 +75,7 @@ options.  The following characters are allowed in the template:
   P  (1)  Packed-decimal field with F signs for positive numbers
           (sometimes called "unsigned") (default length = 8)
   s  (2)  Signed short integer (S/390 halfword)
-  S  (2)  Unsigned short integer (2 bytes)	
-  t  (2)  SMF timestamp (time + date, 8 bytes)
+  S  (2)  Unsigned short integer (2 bytes)
   x  (2)  A null byte
   z  (1)  Zoned-decimal field (default length = 8)
   Z  (1)  Unsigned zoned-decimal field (default length = 8)
@@ -115,13 +116,17 @@ If the input is not a valid Perl number, the results are unpredictable
 (since they depend on internal Perl code), but most likely the output
 field will contain zero.
 
-'p' will produce packed fields with the preferred sign characters: 
+'p' will produce packed fields with the preferred sign characters:
 C for positive, D for negative. 'P' will produce F for positive
 (sometimes called "unsigned") and D for negative.
 
 Signed zoned output (z) will always have an overpunch in the last byte
-for the sign: e.g., x'C1' (EBCDIC 'A') for +1 or x'D3' (EBCDIC 'L')
-for -3. Unsigned zoned output (Z) will have no overpunch.
+for the sign. In other words, the top nibble will be 'C' for positive
+or 'D' for negative; e.g., x'C1' (EBCDIC 'A') for +1 or x'D3'
+(EBCDIC 'L') for -3.
+In unsigned zoned output (Z), positive values will have no overpunch;
+i.e., the top nibble will always be 'F'. Thus, +1 will be the character
+'1' (x'F1'). Negative values will have a 'D' overpunch.
 
 The ASCII-to-EBCDIC translation used by [Ee] is the same as in
 asc2eb().
@@ -129,14 +134,6 @@ asc2eb().
 Either 'h' or 'H' may be used to request hexadecimal conversion.  This
 conversion is exactly the same as in the Perl pack function, except
 that the high nibble must always come first in the input.
-
-Type 't' takes a Unix time value (integer) and produces an SMF
-timestamp (a 4-byte time followed by a 4-byte date).  Since this
-module cannot be aware of the time zone on the target mainframe, the
-time value is treated as if it were UTC (GMT).  You may have to
-adjust the time accordingly; for instance, if your target mainframe
-is running on Eastern time, you will probably want to subtract 
-18000 (= 5 hours * 3600 sec/hr) from the time before packing it.
 
 The maximum length of a packed field is 16 bytes; of a zoned field, 32
 bytes.  All other fields may have a maximum specifier (length or repeat
@@ -160,8 +157,7 @@ options.  The following characters are allowed in the template:
   I      (2)   Unsigned integer (4 bytes)
   p      (1)   Packed-decimal field
   s      (2)   Signed short integer (S/390 halfword)
-  S      (2)   Unsigned short integer (2 bytes)	
-  t      (2)   SMF timestamp (time + date, 8 bytes)
+  S      (2)   Unsigned short integer (2 bytes)
   v      (2)   EBCDIC varchar string
   x      (1)   Ignore these bytes
   z or Z (1)   Zoned-decimal field (signed or unsigned)
@@ -203,15 +199,6 @@ element of the list will be undefined.
 The EBCDIC-to-ASCII translation used by [Eev] is the same as in
 eb2asc().
 
-Type 't' reads an SMF timestamp (a 4-byte time followed by a 4-byte
-date) and produces a Unix time value.  The hundredths of a second
-in the SMF time field are discarded.  Since this
-module cannot be aware of the time zone on the source mainframe, the
-time value is treated as if it were UTC (GMT).  You may have to
-adjust the time accordingly; for instance, if your source mainframe
-is running on Eastern time, you will probably want to add
-18000 (= 5 hours * 3600 sec/hr) to the result after unpacking.
-
 The maximum length of a packed field is 16 bytes; of a zoned field, 32
 bytes.  All other fields may have a maximum specifier (length or repeat
 count) of 32767.  These maxima are enforced.
@@ -229,10 +216,34 @@ returns a list of lines, each of which is terminated with a newline.
 This allows them to be printed immediately; for instance, you can say
 "print hexdump($crud);".
 
-The second and third arguments are optional.  The second specifies 
+The second and third arguments are optional.  The second specifies
 a starting address for the dump (default = 0); the third specifies
 the character set to use for the printable data at the end of each
 line ("ascii" or "ebcdic", in upper or lower case; default = ascii).
+
+=item B<set_codepage> CODEPAGE
+
+Sets the ASCII<->EBCDIC translation to CODEPAGE.  This is equivalent to
+
+  use Convert::IBM390::CODEPAGE;
+
+but is more convenient if you're switching between multiple codepages,
+or if the codepage is determined at runtime.
+
+=item B<set_translation> A2E [E2A [E2AP]]
+
+Sets the ASCII<->EBCDIC translation tables.  Each table must be either
+256 characters, or 512 hexadecimal digits with optional whitespace.
+
+If the mapping is 1-to-1 (each ASCII byte maps to a unique EBCDIC
+byte), you can specify just one of A2E and E2A (either one, passing
+C<undef> for the other), and set_translation will automatically
+compute the reverse mapping.  If the mapping is not 1-to-1, you must
+supply both A2E and E2A.  (If you're only converting in one direction,
+you could pass a bogus table like S<C<' ' x 256>>).
+
+E2AP is normally generated automatically from E2A, but you can supply
+it if you want a different set of "printable" characters.
 
 =item B<version>
 
@@ -241,6 +252,48 @@ function is not exported; it must be called as
 C<Convert::IBM390::version>.
 
 =back
+
+=head1 CODEPAGES
+
+The following EBCDIC code pages are available. CP01047 is the
+default.
+
+  CP00037: USA, Canada, Australia, New Zealand, Netherlands, Brazil, Portugal
+  CP00273: Austria, Germany
+  CP00275: Brazil
+  CP00277: Denmark, Norway
+  CP00278: Finland, Sweden
+  CP00280: Italy
+  CP00281: Japanese English
+  CP00282: Portuguese
+  CP00284: Spanish
+  CP00285: United Kingdom
+  CP00297: France
+  CP00500: Latin-1
+  CP00871: Iceland
+  CP01047: Latin-1 
+  CP01140: USA/Canada (Euro)
+  CP01141: Germany (Euro)
+  CP01142: Denmark/Norway (Euro)
+  CP01143: Finland/Sweden (Euro)
+  CP01144: Italy (Euro)
+  CP01145: Latin America/Spain (Euro)
+  CP01146: United Kingdom (Euro)
+  CP01147: France (Euro)
+  CP01148: International (Euro)
+  CP01149: Icelandic (Euro)
+
+=head1 SMF TIMESTAMPS
+
+Support for SMF timestamps has been removed from this version.
+If you need to read an SMF timestamp, it can be unpacked with the
+template 'ip4'. The first field is the time of day in hundredths
+of seconds since midnight (e.g. 3258000 for 9:03 a.m.); the second
+is the Julian day in cyyddd form (e.g. 102227 for 2002-08-15).
+Likewise, the time of day and date, converted to the above forms,
+may be packed into an EBCDIC record with the same template, 'ip4'.
+Be aware that the time zone on the SMF server may not be the same
+as in your Perl program.
 
 =head1 A COBOL EXAMPLE
 
@@ -280,14 +333,10 @@ converters).
 z/OS MVS System Management Facilities (SMF), SA22-7630,
 s.v. "Standard SMF Record Header".
 
-=head1 BUGS
-
-None, of course.  What do you think this is -- Unix?
-
 =head1 AUTHOR
 
 Convert::IBM390 was written by Geoffrey Rommel
-E<lt>GROMMEL (at) cpan (dot) orgE<gt>
+E<lt>GROMMEL@cpan.orgE<gt>
 in January 1999.
 Thanks to Barry Roomberg for the Cobol example.
 

@@ -1,18 +1,16 @@
-package Convert::IBM390;
+package Convert::IBM390;        # -*-perl-*-
 
 use strict;
 use Carp;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 require Exporter;
-require DynaLoader;
-require AutoLoader;
 
-@ISA = qw(Exporter DynaLoader);
+@ISA = qw(Exporter);
 @EXPORT = qw();
 @EXPORT_OK = qw(asc2eb eb2asc eb2ascp packeb unpackeb
-   hexdump);
-$VERSION = '0.25';
+   hexdump set_codepage set_translation);
+$VERSION = '0.26';
 
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );
 
@@ -82,14 +80,15 @@ sub version {
  return "Convert::IBM390 version $VERSION XS+C";
 }
 
-#--- The local AUTOLOAD usually defined here is not needed because
-#--- we are not loading constants from the header files.  Use the
-#--- standard AutoLoader::AUTOLOAD instead.
+#---------------------------------------------------------------------
+# Use XSLoader if available, otherwise DynaLoader:
 
-
-bootstrap Convert::IBM390 $VERSION;
-
-
-1;
-
-__END__
+eval {
+  require XSLoader;
+  XSLoader::load('Convert::IBM390', $VERSION);
+  1;
+} or do {
+  require DynaLoader;
+  push @ISA, 'DynaLoader';
+  bootstrap Convert::IBM390 $VERSION;
+};
