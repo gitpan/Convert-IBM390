@@ -13,6 +13,8 @@ print "ok 1\n";
 
 $VERBOSE = $ENV{TEST_VERBOSE};
 
+print Convert::IBM390::version(), "\n";
+
 my $failed = 0;
 #----- asc2eb
 print "asc2eb.............";

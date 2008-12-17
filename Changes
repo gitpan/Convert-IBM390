@@ -126,3 +126,7 @@ Revision history for Perl extension Convert::IBM390.
 	- XS packeb might read unallocated memory
 	- Above changes made by Chris Madsen.
 	- Removed the little-used SMF timestamp option.
+
+0.27  x
+	- Corrected the README.
+	- Removed 'config_re' from Makefile.PL.

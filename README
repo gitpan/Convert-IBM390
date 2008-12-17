@@ -11,12 +11,13 @@ hexdump:  dump memory in an MVS-like format
 
 Recent changes:
 
-0.18 - Performance improvements to the XS version.
-0.19 - Fixed a bug in unpackeb.
-0.20 - Fixed memory leaks in CF_num2packed and CF_num2zoned.
-0.21 - Added '@' option to unpackeb.
 0.22 - Simplified packed-to-numeric conversions; some documentation
        changes.
+0.23 - Added 'Z' option for unsigned zoned decimal.
+0.24 - Minor corrections to POD.
+0.25 - Use setenv() rather than putenv() for Linux.
+0.26 - Allow user-specified translation tables. Removed SMF timestamps.
+0.27 - Minor housekeeping changes.
 
 Copyright © 2001 Geoffrey Rommel.  This program is free software;
 you can redistribute it and/or modify it under the same terms as Perl

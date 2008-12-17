@@ -289,7 +289,7 @@ Support for SMF timestamps has been removed from this version.
 If you need to read an SMF timestamp, it can be unpacked with the
 template 'ip4'. The first field is the time of day in hundredths
 of seconds since midnight (e.g. 3258000 for 9:03 a.m.); the second
-is the Julian day in cyyddd form (e.g. 102227 for 2002-08-15).
+is the Julian day in cyyddd form (e.g. 103227 for 2003-08-15).
 Likewise, the time of day and date, converted to the above forms,
 may be packed into an EBCDIC record with the same template, 'ip4'.
 Be aware that the time zone on the SMF server may not be the same

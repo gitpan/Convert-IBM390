@@ -1,5 +1,4 @@
 use ExtUtils::MakeMaker;
-use Config qw(config_re);
 
 $use_xs = (grep { $_ eq 'noxs' } @ARGV) == 0;
 
